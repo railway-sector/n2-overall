@@ -23,6 +23,7 @@ import {
   alignmentGroupLayer,
   lotLayer,
   pierHeadColumnLayer,
+  meralco_tss10_groupLayer,
   // maintenanceRoadLayer,
 } from "../layers";
 import type { ArcgisSearch } from "@arcgis/map-components/components/arcgis-search";
@@ -53,6 +54,7 @@ export default function MapDisplay() {
     arcgisScene?.map?.add(ngcp2_groupLayer);
     arcgisScene?.map?.add(structureLayer);
     arcgisScene?.map?.add(nloLoOccupancyGroupLayer);
+    arcgisScene?.map?.add(meralco_tss10_groupLayer);
     arcgisScene?.map?.add(alignmentGroupLayer);
     arcgisScene?.map?.add(prowLayer);
     arcgisScene?.map?.add(handedOverLotLayer);

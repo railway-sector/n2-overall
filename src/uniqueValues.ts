@@ -720,6 +720,7 @@ export function defineActions(event: any) {
   item.title === "Line (status)" ||
   item.title === "Pier Head/Column" ||
   item.title === "Viaduct" ||
+  item.title === "MERALCO TSS 10" ||
   item.title === "Station Structures"
     ? (item.visible = false)
     : (item.visible = true);

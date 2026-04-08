@@ -484,6 +484,61 @@ export const stationLayer = new FeatureLayer({
 stationLayer.listMode = "hide";
 
 /* Land and Structure Layers */
+/* Meraloc TSS 10*/
+export const primaryLabelColor = "#9ca3af";
+const meralco_tss_renderer = new SimpleRenderer({
+  symbol: new SimpleFillSymbol({
+    color: "#f10861",
+    style: "horizontal",
+    outline: {
+      // autocasts as new SimpleLineSymbol()
+      color: primaryLabelColor, //#DF73FF,
+      width: "3px",
+    },
+  }),
+});
+
+export const Meralco_tss10_layer = new FeatureLayer({
+  portalItem: {
+    id: "d5c43ca76b9a475e954e9c3d3595e2af",
+    portal: {
+      url: "https://gis.railway-sector.com/portal",
+    },
+  },
+  renderer: meralco_tss_renderer,
+  title: "Additional Area for MERALCO TSS 10",
+  minScale: 150000,
+  maxScale: 0,
+  elevationInfo: {
+    mode: "on-the-ground",
+  },
+});
+
+export const Meralco_tss10_structure = new FeatureLayer({
+  portalItem: {
+    id: "23500954a8d84a46886e76e6e0883a69",
+    portal: {
+      url: "https://gis.railway-sector.com/portal",
+    },
+  },
+  layerId: 3,
+  definitionExpression: "MERALCO_Affected = 1",
+  renderer: meralco_tss_renderer,
+  title: "MERALCO TSS 10 Tagged Strcture",
+  minScale: 150000,
+  maxScale: 0,
+  elevationInfo: {
+    mode: "on-the-ground",
+  },
+});
+
+export const meralco_tss10_groupLayer = new GroupLayer({
+  title: "MERALCO TSS 10",
+  visible: true,
+  visibilityMode: "independent",
+  layers: [Meralco_tss10_structure, Meralco_tss10_layer],
+});
+
 /* The colors used for the each transit line */
 const lotIdLabel = new LabelClass({
   labelExpressionInfo: { expression: "$feature.LotID" },
