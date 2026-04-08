@@ -1,1 +1,0 @@
-import{kn as a}from"./index-2nRREEUn.js";let t,o,n=!1;function p(){return t??=a("arcadeGeometryOperatorsWorker").then(e=>{o=e,n=!0,t=void 0})}async function i(e,r){return n?o.apply("invokeGeometryOp",[e,r]):(await p(),i(e,r))}export{i as a};

@@ -1,1 +1,0 @@
-import{ec as n}from"./index-2nRREEUn.js";function f(e,r){let t;if(typeof e=="string")t=n(e+`-seed(${r})`);else{let o=12;t=e^r;do t=107*(t>>8^t)+o|0;while(--o!==0)}return(1+t/(1<<31))/2}function c(e){return Math.floor(f(e,i)*l)}const i=53290320,l=10;export{f as e,c as o};
