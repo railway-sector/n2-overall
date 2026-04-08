@@ -1,0 +1,1 @@
+import{jV as f,jW as t}from"./index-B_vC5_b-.js";function n(u,e){return e.push(u.buffer),{buffer:u.buffer,layout:new f(u.layout)}}function o(u){return new t(u.layout).createView(u.buffer)}export{o as t,n as u};

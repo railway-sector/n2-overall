@@ -1,0 +1,1 @@
+import{ad as o}from"./index-B_vC5_b-.js";const s=/\.(\w+)$/;function c(e){const t=new URL(e).pathname.match(s);return!t||t.length<2?null:t[1].toUpperCase()}const m=async(e,t)=>{const a=await o(e,{...t,method:"head"}),n=a?.getHeader?.("Content-Type");return n?n.split("/")[1]:null};export{m as getDatasetFormat,c as guessExtensionFromURI};
