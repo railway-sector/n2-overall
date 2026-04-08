@@ -1,105 +1,158 @@
-import { useState } from "react";
-
-// Optional: If you're loading secure web maps
-// import { configureOAuth } from "./auth/configureOAuth";
-// configureOAuth({
-//   // Default portalUrl is ArcGIS Online
-//   // Only set if using other portals
-//   portalUrl: "YOUR_PORTAL_URL",
-//   appId: "YOUR_APP_ID",
-// });
-
-// Individual imports for each Map, Chart and Calcite component
-import "@arcgis/map-components/components/arcgis-expand";
-import "@arcgis/map-components/components/arcgis-legend";
-import "@arcgis/map-components/components/arcgis-map";
-import "@arcgis/map-components/components/arcgis-search";
-import "@arcgis/map-components/components/arcgis-zoom";
-import "@arcgis/charts-components/components/arcgis-chart";
-import "@esri/calcite-components/components/calcite-shell";
-import "@esri/calcite-components/components/calcite-navigation";
-import "@esri/calcite-components/components/calcite-navigation-logo";
-
-// Import modules and types from the SDK's core API
-import Graphic from "@arcgis/core/Graphic.js";
-import Point from "@arcgis/core/geometry/Point.js";
-import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol.js";
-import SimpleLineSymbol from "@arcgis/core/symbols/SimpleLineSymbol.js";
-import type WebMap from "@arcgis/core/WebMap";
+import { useState, useEffect } from "react";
+import OAuthInfo from "@arcgis/core/identity/OAuthInfo";
+import IdentityManager from "@arcgis/core/identity/IdentityManager";
+import Portal from "@arcgis/core/portal/Portal";
+import { MyContext } from "./contexts/MyContext";
+import MapDisplay from "./components/MapDisplay";
+import ActionPanel from "./components/ActionPanel";
+import Header from "./components/Header";
+import MainChart from "./components/MainChart";
+import { contractPackage } from "./uniqueValues";
+import UndergroundSwitch from "./components/UndergroundSwitch";
 
 export function App(): React.JSX.Element {
-  const [navHeading, setNavHeading] = useState("");
-  const [navDescription, setNavDescription] = useState("");
-
-  const handleViewReady = (event: CustomEvent): void => {
-    const viewElement = event.target as HTMLArcgisMapElement;
-
-    // Use metadata from the Web Map to populate the header
-    const map = viewElement.map as WebMap;
-    const portalItem = map.portalItem;
-    const title = portalItem?.title ? portalItem.title : "A web map";
-    const description = portalItem?.description ? portalItem.description : "ArcGIS Maps SDK for JavaScript template";
-
-    setNavHeading(title);
-    setNavDescription(description);
-
-    // Define a point geometry
-    const point = new Point({
-      longitude: -98.38,
-      latitude: 38.34,
+  const [loggedInState, setLoggedInState] = useState<boolean>(false);
+  useEffect(() => {
+    // Useful video: https://www.google.com/search?sca_esv=41638d9270b90df6&rlz=1C1CHBF_enPH1083PH1083&udm=7&fbs=AIIjpHxU7SXXniUZfeShr2fp4giZud1z6kQpMfoEdCJxnpm_3W-pLdZZVzNY_L9_ftx08kwv-_tUbRt8pOUS8_MjaceHuSAD6YvWZ0rfFzwmtmaBgLepZn2IJkVH-w3cPU5sPVz9l1Pp06apNShUnFfpGUJOF8p91U6HxH3ukND0OVTTVy0CGuHNdViLZqynGb0mLSRGeGVO46qnJ_2yk3F0uV6R6BW9rQ&q=apply+user+authentication+using+arcgis+maps+sdk+for+javascript+for+arcgis+enterprise&sa=X&ved=2ahUKEwjVqZbdlLKQAxUtmq8BHVQQCHcQtKgLegQIGRAB&biw=1920&bih=911&dpr=1#fpstate=ive&vld=cid:fcf356be,vid:hQH9d1vc8Gc,st:0
+    // check app authentication: https://developers.arcgis.com/documentation/security-and-authentication/app-authentication/how-to-implement-app-authentication/
+    const info = new OAuthInfo({
+      appId: "mrnZvYTJlFwv0v1n",
+      popup: false,
+      portalUrl: "https://gis.railway-sector.com/portal",
     });
 
-    // Create an outline for the marker symbol
-    const outline = new SimpleLineSymbol({
-      color: "white",
-      width: 2,
-    });
+    IdentityManager.registerOAuthInfos([info]);
+    async function loginAndLoadPortal() {
+      try {
+        await IdentityManager.checkSignInStatus(info.portalUrl + "/sharing");
+        const portal: any = new Portal({
+          // access: "public",
+          url: info.portalUrl,
+          authMode: "no-prompt",
+        });
+        portal.load().then(() => {
+          setLoggedInState(true);
+          console.log("Logged in as: ", portal.user.username);
+        });
+      } catch (error) {
+        console.error("Authentication error:", error);
+        IdentityManager.getCredential(info.portalUrl);
+      }
+    }
+    loginAndLoadPortal();
+  }, []);
 
-    // Create a symbol for drawing the point
-    const symbol = new SimpleMarkerSymbol({
-      style: "triangle",
-      size: 20,
-      color: "red",
-      outline,
-    });
+  const [contractpackages, setContractpackages] = useState<any>(
+    contractPackage[0],
+  );
+  const [statusdatefield, setStatusdatefield] = useState<any>();
+  const [datefields, setDatefields] = useState<any>();
+  const [timesliderstate, setTimesliderstate] = useState<boolean>(false);
+  const [asofdate, setAsofdate] = useState<any>();
+  const [latestasofdate, setLatestasofdate] = useState<any>();
+  const [handedoverDatefield, setHandedoverDatefield] = useState<any>();
+  const [handedoverAreafield, setHandedoverAreafield] = useState<any>();
+  const [newAffectedAreafield, setNewAffectedAreafield] = useState<any>();
+  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
+  const [newHandedOverfield, setNewHandedOverfield] = useState<any>();
+  const [utilityLinestats, setUtilityLinestats] = useState<any>();
 
-    // Create a graphic and add the geometry and symbol to it
-    const pointGraphic = new Graphic({
-      geometry: point,
-      symbol,
-    });
+  const updateContractPackage = (newContractpackage: any) => {
+    setContractpackages(newContractpackage);
+  };
 
-    // Add a graphic to demonstrate custom visualizations beyond Web Map content
-    viewElement.graphics.add(pointGraphic);
+  const updateStatusdatefield = (newStatusfield: any) => {
+    setStatusdatefield(newStatusfield);
+  };
+
+  const updateDatefields = (newDateFields: any) => {
+    setDatefields(newDateFields);
+  };
+
+  const updateTimesliderstate = (newState: any) => {
+    setTimesliderstate(newState);
+  };
+
+  const updateAsofdate = (newAsofdate: any) => {
+    setAsofdate(newAsofdate);
+  };
+
+  const updateLatestasofdate = (newAsofdate: any) => {
+    setLatestasofdate(newAsofdate);
+  };
+
+  const updateHandedoverDatefield = (newDatefield: any) => {
+    setHandedoverDatefield(newDatefield);
+  };
+
+  const updateHandedoverAreafield = (newAreafield: any) => {
+    setHandedoverAreafield(newAreafield);
+  };
+
+  const updateNewAffectedAreafield = (newAreafield: any) => {
+    setNewAffectedAreafield(newAreafield);
+  };
+
+  const updateChartPanelwidth = (newWidth: any) => {
+    setChartPanelwidth(newWidth);
+  };
+
+  const updateNewHandedOverfield = (newHandedOverfield: any) => {
+    setNewHandedOverfield(newHandedOverfield);
+  };
+
+  const updateUtilityLinestats = (newStats: any) => {
+    setUtilityLinestats(newStats);
   };
 
   return (
-    // The Shell component is used as a layout for this template
-    <calcite-shell content-behind>
-      <calcite-navigation slot="header">
-        {/* Heading and description dynamically populated */}
-        <calcite-navigation-logo
-          heading={navHeading}
-          description={navDescription}
-          heading-level="1"
-          slot="logo"
-        ></calcite-navigation-logo>
-      </calcite-navigation>
-      {/* The Map component fits to the size of the parent element  */}
-      {/* The basemap, extent, zoom and more are provided by the Web Map (item-id) */}
-      <arcgis-map item-id="dd4b2f25487d4a37a45093ba6acd026d" onarcgisViewReadyChange={handleViewReady}>
-        <arcgis-zoom slot="top-left" />
-        <arcgis-search slot="top-right" />
-        <arcgis-expand slot="bottom-left">
-          <arcgis-legend></arcgis-legend>
-        </arcgis-expand>
-        {/*  A Feature Layer in the Web Map has an associated chart (layer-item-id) */}
-        <arcgis-chart
-          layer-item-id="b1717962dab247ad93eaca257b32fe02"
-          chart-index="1"
-          slot="bottom-right"
-        ></arcgis-chart>
-      </arcgis-map>
-    </calcite-shell>
+    <>
+      {loggedInState && (
+        <calcite-shell
+          // content-behind
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#888 #555",
+            "--calcite-color-background": "#2b2b2b",
+          }}
+        >
+          <MyContext
+            value={{
+              contractpackages,
+              statusdatefield,
+              datefields,
+              timesliderstate,
+              asofdate,
+              latestasofdate,
+              handedoverDatefield,
+              handedoverAreafield,
+              newAffectedAreafield,
+              chartPanelwidth,
+              newHandedOverfield,
+              utilityLinestats,
+              updateContractPackage,
+              updateStatusdatefield,
+              updateDatefields,
+              updateTimesliderstate,
+              updateAsofdate,
+              updateLatestasofdate,
+              updateHandedoverDatefield,
+              updateHandedoverAreafield,
+              updateNewAffectedAreafield,
+              updateChartPanelwidth,
+              updateNewHandedOverfield,
+              updateUtilityLinestats,
+            }}
+          >
+            <UndergroundSwitch />
+            <MainChart />
+            <ActionPanel />
+            <MapDisplay />
+
+            <Header />
+          </MyContext>
+        </calcite-shell>
+      )}
+    </>
   );
 }
