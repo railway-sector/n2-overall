@@ -1,41 +1,45 @@
 import { use, useEffect, useRef, useState } from "react";
-import { handedOverLotLayer, lotLayer } from "../layers";
+import { handedOverLotLayer, lotLayer, queryc, queryc2 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import {
-  chartRenderer,
   dateUpdate,
-  queryDefinitionExpression,
+  highlightLot,
+  highlightRemove,
   thousands_separators,
-  queryExpression,
   zoomToLayer,
-  pieChartStatusData,
-  totalFieldCount,
-  totalFieldSum,
 } from "../Query";
 import "@esri/calcite-components/dist/components/calcite-segmented-control";
 import "@esri/calcite-components/dist/components/calcite-segmented-control-item";
 import "@esri/calcite-components/dist/components/calcite-checkbox";
 import {
   affectedAreaField,
+  cpField,
   cutoff_days,
   lotHandedOverAreaField,
   lotHandedOverField,
   lotIdField,
   lotStatusColor,
   lotStatusField,
-  lotStatusLabel,
   lotStatusQuery,
   primaryLabelColor,
+  querySuperUrgent,
+  superurgent_items,
   updatedDateCategoryNames,
   valueLabelColor,
 } from "../uniqueValues";
-
 import "@arcgis/map-components/dist/components/arcgis-scene";
 import "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
+import {
+  pieChartStatusData,
+  totalFieldCount,
+  totalFieldSum,
+} from "../ChartGenerator";
+import { queryDefinitionExpression } from "../QueryExpression";
+import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -56,6 +60,8 @@ const LotChart = () => {
     asofdate,
     chartPanelwidth,
     updateChartPanelwidth,
+    superurgenttype,
+    updateSuperurgenttype,
   } = use(MyContext);
 
   // 0. Updated date
@@ -76,6 +82,7 @@ const LotChart = () => {
   const new_fontSize = chartPanelwidth / 22.3;
   const new_valueSize = new_fontSize * 1.55;
   const new_imageSize = chartPanelwidth * 0.03;
+  const new_sementedListSize = chartPanelwidth * 0.55;
   const new_asofDateSize = chartPanelwidth * 0.032;
   const new_pieSeriesScale = 220;
   const new_pieInnerValueFontSize = "1.1rem";
@@ -101,6 +108,14 @@ const LotChart = () => {
   const [handedOverCheckBox, setHandedOverCheckBox] = useState<any>(false);
 
   useEffect(() => {
+    if (superurgenttype === superurgent_items[1]) {
+      highlightLot(lotLayer, arcgisScene);
+    } else {
+      highlightRemove();
+    }
+  }, [superurgenttype]);
+
+  useEffect(() => {
     if (handedOverCheckBox === true) {
       handedOverLotLayer.visible = true;
     } else {
@@ -116,27 +131,36 @@ const LotChart = () => {
 
   // Chart data and calculate statistics
   useEffect(() => {
+    //--- Update query expression
+    const qSuperrugent_expression =
+      superurgenttype === "OFF" ? undefined : querySuperUrgent;
+
+    queryc.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+    queryc.qFields = [cpField];
+    queryc.q2Expression = qSuperrugent_expression;
+
     queryDefinitionExpression({
-      queryExpression: queryExpression({
-        contractcp: contractpackages,
-      }),
+      queryExpression: queryc.queryExpression(),
       featureLayer: [lotLayer, handedOverLotLayer],
     });
 
     //--- chart data
     pieChartStatusData({
-      contractcp: contractpackages,
+      qChart: queryc.queryExpression(),
       layer: lotLayer,
-      statusList: lotStatusLabel,
+      statusList: lotStatusQuery,
       statusColor: lotStatusColor,
       statusField: lotStatusField,
+      statisticType: "count",
     }).then((result: any) => {
       setLotData(result[0]);
     });
 
     //--- total number of lots (public + private)
     totalFieldCount({
-      contractcp: contractpackages,
+      qChart: queryc.queryExpression(),
       layer: lotLayer,
       idField: lotIdField,
     }).then((result: any) => {
@@ -145,7 +169,7 @@ const LotChart = () => {
 
     //-- Total affected area
     totalFieldSum({
-      contractcp: contractpackages,
+      qChart: queryc.queryExpression(),
       layer: lotLayer,
       valueSumField: affectedAreaField,
     }).then((result: any) => {
@@ -154,7 +178,7 @@ const LotChart = () => {
 
     //--- Total handed-over area
     totalFieldSum({
-      contractcp: contractpackages,
+      qChart: queryc.queryExpression(),
       layer: lotLayer,
       valueSumField: lotHandedOverAreaField,
     }).then((result: any) => {
@@ -162,8 +186,15 @@ const LotChart = () => {
     });
 
     //--- Total handed-over lots
+    queryc2.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+    queryc2.qFields = [cpField];
+    queryc2.qExpression = `${lotStatusField} <> 8`;
+    queryc2.q2Expression = qSuperrugent_expression;
+
     totalFieldSum({
-      contractcp: contractpackages,
+      qChart: queryc2.queryExpression(),
       layer: lotLayer,
       valueSumField: lotHandedOverField,
     }).then((result: any) => {
@@ -171,7 +202,7 @@ const LotChart = () => {
     });
 
     zoomToLayer(lotLayer, arcgisScene);
-  }, [contractpackages]);
+  }, [contractpackages, superurgenttype]);
 
   useEffect(() => {
     // Dispose previously created root element
@@ -225,7 +256,9 @@ const LotChart = () => {
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      contractcp: contractpackages,
+      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Field: cpField,
+      q2Expression: superurgenttype === "OFF" ? undefined : querySuperUrgent,
       status_field: lotStatusField,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,
@@ -317,6 +350,48 @@ const LotChart = () => {
             </label>
           </dd>
         </dl>
+      </div>
+
+      <div style={{ display: "flex" }}>
+        <div
+          style={{
+            marginLeft: "15px",
+            fontSize: `${new_fontSize}px`,
+            color: primaryLabelColor,
+            marginTop: "auto",
+            marginBottom: "auto",
+            marginRight: "10px",
+          }}
+        >
+          Super Urgent Lot:{" "}
+        </div>
+        <calcite-segmented-control
+          scale="s"
+          width="full"
+          style={{
+            width: `${new_sementedListSize}px`,
+            // marginRight: "80px",
+            // marginTop: "auto",
+            marginBottom: "auto",
+          }}
+          oncalciteSegmentedControlChange={(event: any) =>
+            updateSuperurgenttype(event.target.selectedItem.id)
+          }
+        >
+          {superurgenttype &&
+            superurgent_items.map((priority, index) => {
+              return (
+                <calcite-segmented-control-item
+                  {...(superurgenttype === priority ? { checked: true } : {})}
+                  key={index}
+                  value={priority}
+                  id={priority}
+                >
+                  {priority}
+                </calcite-segmented-control-item>
+              );
+            })}
+        </calcite-segmented-control>
       </div>
 
       <div

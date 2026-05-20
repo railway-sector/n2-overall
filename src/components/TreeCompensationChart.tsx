@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState, use } from "react";
-import { treeCompensationLayer } from "../layers";
+import { queryc, treeCompensationLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import { chartRenderer, pieChartStatusData } from "../Query";
 import {
   colorsCompen,
-  statusTreeCompensation,
+  cpField,
   statusTreeCompensationChart,
   treeCompen_status_field,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
+import { pieChartStatusData } from "../ChartGenerator";
+import { queryDefinitionExpression } from "../QueryExpression";
+import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -39,12 +41,23 @@ const TreeCompensationChart = () => {
   const chartid = "pie-compen";
 
   useEffect(() => {
+    queryc.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+    queryc.qFields = [cpField];
+
+    queryDefinitionExpression({
+      queryExpression: queryc.queryExpression(),
+      featureLayer: [treeCompensationLayer],
+    });
+
     pieChartStatusData({
-      contractcp: contractpackages,
+      qChart: queryc.queryExpression(),
       layer: treeCompensationLayer,
-      statusList: statusTreeCompensation,
+      statusList: statusTreeCompensationChart,
       statusColor: colorsCompen,
       statusField: treeCompen_status_field,
+      statisticType: "count",
     }).then((result: any) => {
       setTreeData(result[0]);
     });
@@ -99,12 +112,14 @@ const TreeCompensationChart = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
+
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      contractcp: contractpackages,
+      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Field: cpField,
       status_field: treeCompen_status_field,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

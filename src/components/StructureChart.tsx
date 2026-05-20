@@ -4,11 +4,7 @@ import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import {
-  chartRenderer,
   dateUpdate,
-  pieChartStatusData,
-  queryDefinitionExpression,
-  queryExpression,
   thousands_separators,
   // totalFieldCount,
 } from "../Query";
@@ -20,13 +16,16 @@ import {
   structureStatusField,
   updatedDateCategoryNames,
   valueLabelColor,
-  structureStatusLabel,
   structureStatusColorHex,
+  cpField,
   // structurePteField,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { occupancyLayer, structureLayer } from "../layers";
+import { occupancyLayer, queryc, structureLayer } from "../layers";
+import { pieChartStatusData } from "../ChartGenerator";
+import { queryDefinitionExpression } from "../QueryExpression";
+import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -71,40 +70,29 @@ const StructureChart = () => {
 
   const chartID = "structure-chart";
   const [structureNumber, setStructureNumber] = useState<number>(0);
-  // const [pteNumber, setPteNumber] = useState<number>(0);
-  // const [ptePercent, setPtePercent] = useState<number>(0);
-
-  // useEffect(() => {
-  //   setPtePercent(Number(((pteNumber / structureNumber) * 100).toFixed(0)));
-  // }, [structureData, structureNumber]);
 
   useEffect(() => {
+    queryc.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+    queryc.qFields = [cpField];
     queryDefinitionExpression({
-      queryExpression: queryExpression({ contractcp: contractpackages }),
+      queryExpression: queryc.queryExpression(),
       featureLayer: [structureLayer, occupancyLayer],
     });
 
     //--- chart data
     pieChartStatusData({
-      contractcp: contractpackages,
+      qChart: queryc.queryExpression(),
       layer: structureLayer,
-      statusList: structureStatusLabel,
+      statusList: structureStatusQuery,
       statusColor: structureStatusColorHex,
       statusField: structureStatusField,
+      statisticType: "count",
     }).then((result: any) => {
       setStructureData(result[0]);
       setStructureNumber(result[1]);
     });
-
-    //--- total number of pte
-    // totalFieldCount({
-    //   contractcp: contractpackages,
-    //   layer: structureLayer,
-    //   idField: structurePteField,
-    //   queryField: `${structurePteField} = 1`,
-    // }).then((result: any) => {
-    //   setPteNumber(result);
-    // });
   }, [contractpackages]);
 
   useEffect(() => {
@@ -136,8 +124,8 @@ const StructureChart = () => {
         valueField: "value",
         //legendLabelText: "[{fill}]{category}[/]",
         legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
-        radius: am5.percent(45), // outer radius
-        innerRadius: am5.percent(28),
+        radius: am5.percent(35), // outer radius
+        innerRadius: am5.percent(23),
       }),
     );
     pieSeriesRef.current = pieSeries;
@@ -159,7 +147,8 @@ const StructureChart = () => {
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      contractcp: contractpackages,
+      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Field: cpField,
       status_field: structureStatusField,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,
@@ -239,59 +228,12 @@ const StructureChart = () => {
       <div
         id={chartID}
         style={{
-          height: "57vh",
+          height: "67vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginBottom: "5%",
         }}
       ></div>
-
-      {/* Permit-to-Enter */}
-      {/* <div
-        style={{
-          display: "flex",
-          // marginTop: "3px",
-          marginLeft: "15px",
-          marginRight: "15px",
-          justifyContent: "space-between",
-        }}
-      >
-        <dl style={{ alignItems: "center", marginLeft: "15px" }}>
-          <dt
-            style={{
-              color: primaryLabelColor,
-              fontSize: `${new_fontSize}px`,
-            }}
-          >
-            PERMIT-TO-ENTER
-          </dt>
-          <dd
-            style={{
-              color: valueLabelColor,
-              fontSize: `${new_valueSize}px`,
-              fontWeight: "bold",
-              fontFamily: "calibri",
-              lineHeight: "1.2",
-              margin: "auto",
-            }}
-          >
-            {pteNumber === 0 ? (
-              <span>{ptePercent}% (0)</span>
-            ) : (
-              <span>
-                {ptePercent}% (
-                {thousands_separators(pteNumber)})
-              </span>
-            )}
-          </dd>
-        </dl>
-        <img
-          src="https://EijiGorilla.github.io/Symbols/Permit-To-Enter.png"
-          alt="Structure Logo"
-          height={`${new_imageSize}%`}
-          width={`${new_imageSize}%`}
-        />
-      </div> */}
     </>
   );
 }; // End of lotChartgs

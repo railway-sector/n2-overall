@@ -65,8 +65,59 @@ import {
   treeCommonNameField,
   treeScientificNameField,
   treeMunicipalityField,
+  viaductStatusLabel,
+  viaductStatusColorForLayer,
 } from "./uniqueValues";
 import { labelSymbol3DLine } from "./uniqueValues";
+import QueryExpressionLayers from "query-layers-expression";
+
+export const queryc = new QueryExpressionLayers(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc2 = new QueryExpressionLayers(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc3 = new QueryExpressionLayers(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const querycColumn = new QueryExpressionLayers(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
 
 /* Standalone table for Dates */
 export const dateTable = new FeatureLayer({
@@ -201,13 +252,14 @@ export const prowLayer = new FeatureLayer({
   popupEnabled: false,
   renderer: prowRenderer,
 });
-prowLayer.listMode = "hide";
+// prowLayer.listMode = "hide";
 
 /* PROW others */
 const prowOthersRenderer = new SimpleRenderer({
   symbol: new SimpleLineSymbol({
-    color: "#BF40BF",
+    color: "red",
     width: "2px",
+    style: "dash",
   }),
 });
 
@@ -565,26 +617,6 @@ const colorLotReqs = {
   6: [0, 0, 0, 0],
 };
 
-// export const lotStatusArray = [
-//   "Paid",
-//   "For Payment Processing",
-//   "For Legal Pass",
-//   "For Offer to Buy",
-//   "For Notice of Taking",
-//   "With PTE",
-//   "For Expropriation",
-// ];
-
-// export const statusLotColor = [
-//   "#00734d",
-//   "#0070ff",
-//   "#ffff00",
-//   "#ffaa00",
-//   "#FF5733",
-//   "#70AD47",
-//   "#FF0000",
-// ];
-
 const lotDefaultSymbol = new SimpleFillSymbol({
   color: [0, 0, 0, 0],
   style: "solid",
@@ -797,14 +829,14 @@ export const superUrgentLotLayer = new FeatureLayer({
 
 /* Handed-Over Lot (public + private) */
 const handedOverLotRenderer = new UniqueValueRenderer({
-  field: lotHandedOverField,
-
+  valueExpression:
+    "When($feature.HandedOver == 1 && $feature.StatusLA != 8, 'Handed-Over', 'others')",
   uniqueValueInfos: [
     {
-      value: 1,
+      value: "Handed-Over",
       label: "Handed-Over",
       symbol: new SimpleFillSymbol({
-        color: [0, 255, 255, 0.3], //[0, 255, 255, 0.1], #00ffff
+        color: [0, 255, 255, 0.3],
         outline: new SimpleLineSymbol({
           color: "#00ffff",
           width: "4px",
@@ -822,7 +854,7 @@ export const handedOverLotLayer = new FeatureLayer({
     },
   },
   layerId: 4,
-  definitionExpression: `${lotHandedOverField} = 1`,
+  definitionExpression: `${lotHandedOverField} = 1 AND ${lotStatusField} <> 8`,
   renderer: handedOverLotRenderer,
   popupEnabled: false,
   title: "Handed-Over (public + private)",
@@ -1466,7 +1498,6 @@ pierAccessLayer.popupTemplate = template;
 
 /* Tree Cutting and Compensation Layers */
 /* Tree cutting layer */
-export const colorsCutting = ["#71ab48", "#ffff00", "#ffaa00", "#ff0000"];
 const treeCutting3DSymbol = (name: any) => {
   return new WebStyleSymbol({
     name: name,
@@ -2454,45 +2485,29 @@ export const launchingGirderLayer = new FeatureLayer({
 });
 
 // * Viaduct * //
+export const uniqueValueInfos_via = [1, 2, 4].map((value: any) => {
+  return Object.assign({
+    value: value,
+    label: viaductStatusLabel[value - 1],
+    symbol: new MeshSymbol3D({
+      symbolLayers: [
+        new FillSymbol3DLayer({
+          material: {
+            color: viaductStatusColorForLayer[value - 1],
+            colorMixMode: "replace",
+          },
+          edges: new SolidEdges3D({
+            color: [225, 225, 225, 0.3],
+          }),
+        }),
+      ],
+    }),
+  });
+});
 
 const viaduct_renderer = new UniqueValueRenderer({
   field: "Status",
-  uniqueValueInfos: [
-    {
-      value: 1,
-      label: "To be Constructed",
-      symbol: new MeshSymbol3D({
-        symbolLayers: [
-          new FillSymbol3DLayer({
-            material: {
-              color: [225, 225, 225, 0.1],
-              colorMixMode: "replace",
-            },
-            edges: new SolidEdges3D({
-              color: [225, 225, 225, 0.3],
-            }),
-          }),
-        ],
-      }),
-    },
-    {
-      value: 4,
-      label: "Completed",
-      symbol: new MeshSymbol3D({
-        symbolLayers: [
-          new FillSymbol3DLayer({
-            material: {
-              color: [0, 112, 255, 0.8],
-              colorMixMode: "replace",
-            },
-            edges: new SolidEdges3D({
-              color: [225, 225, 225, 0.3],
-            }),
-          }),
-        ],
-      }),
-    },
-  ],
+  uniqueValueInfos: uniqueValueInfos_via,
 });
 
 export const viaductLayer = new SceneLayer({
@@ -2696,6 +2711,7 @@ export const alignmentGroupLayer = new GroupLayer({
     maintenanceRoadLayer,
     drainageLayer,
     futureTrackLayer,
+    prowLayer,
   ],
 });
 

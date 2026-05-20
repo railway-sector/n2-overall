@@ -4,14 +4,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import {
-  chartRenderer,
-  dateUpdate,
-  pieChartStatusData,
-  queryDefinitionExpression,
-  queryExpression,
-  thousands_separators,
-} from "../Query";
+import { dateUpdate, thousands_separators } from "../Query";
 import {
   cutoff_days,
   nloStatusField,
@@ -19,12 +12,15 @@ import {
   nloStatusQuery,
   updatedDateCategoryNames,
   valueLabelColor,
-  nloStatusLabel,
   nloStatusColor,
+  cpField,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { nloLayer } from "../layers";
+import { nloLayer, queryc } from "../layers";
+import { pieChartStatusData } from "../ChartGenerator";
+import { queryDefinitionExpression } from "../QueryExpression";
+import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -63,48 +59,34 @@ const NloChart = memo(() => {
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const [nloData, SetNloData] = useState([
-    {
-      category: String,
-      value: Number,
-      sliceSettings: {
-        fill: am5.color("#00c5ff"),
-      },
-    },
-  ]);
+  const [nloData, SetNloData] = useState([]);
   // NLO
   const [nloNumber, setNloNumber] = useState<Number>(0);
   const chartID = "nlo-chart";
 
   useEffect(() => {
+    queryc.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+    queryc.qFields = [cpField];
+
     queryDefinitionExpression({
-      queryExpression: queryExpression({
-        contractcp: contractpackages,
-      }),
+      queryExpression: queryc.queryExpression(),
       featureLayer: [nloLayer],
     });
 
     //--- chart data
     pieChartStatusData({
-      contractcp: contractpackages,
+      qChart: queryc.queryExpression(),
       layer: nloLayer,
-      statusList: nloStatusLabel,
+      statusList: nloStatusQuery,
       statusColor: nloStatusColor,
       statusField: nloStatusField,
+      statisticType: "count",
     }).then((result: any) => {
       SetNloData(result[0]);
       setNloNumber(result[1]);
     });
-
-    //--- total number of structures
-    // totalFieldCount({
-    //   contractcp: contractpackages,
-    //   layer: nloLayer,
-    //   idField: nloStatusField,
-    //   queryField: `${nloStatusField} >= 1`,
-    // }).then((result: any) => {
-    //   setNloNumber(result);
-    // });
   }, [contractpackages]);
 
   useEffect(() => {
@@ -166,7 +148,8 @@ const NloChart = memo(() => {
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      contractcp: contractpackages,
+      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Field: cpField,
       status_field: nloStatusField,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

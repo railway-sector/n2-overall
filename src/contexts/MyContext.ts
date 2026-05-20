@@ -3,6 +3,7 @@ import { createContext } from "react";
 type MyDropdownContextType = {
   contractpackages: any;
   statusdatefield: any;
+  superurgenttype: any;
   datefields: any;
   timesliderstate: any;
   asofdate: any;
@@ -15,6 +16,7 @@ type MyDropdownContextType = {
   newHandedOverfield: any;
   updateContractPackage: any;
   updateStatusdatefield: any;
+  updateSuperurgenttype: any;
   updateDatefields: any;
   updateTimesliderstate: any;
   updateAsofdate: any;
@@ -30,6 +32,7 @@ type MyDropdownContextType = {
 const initialState = {
   contractpackages: undefined,
   statusdatefield: undefined,
+  superurgenttype: undefined,
   datefields: undefined,
   timesliderstate: undefined,
   asofdate: undefined,
@@ -42,6 +45,7 @@ const initialState = {
   utilityLinestats: undefined,
   updateContractPackage: undefined,
   updateStatusdatefield: undefined,
+  updateSuperurgenttype: undefined,
   updateDatefields: undefined,
   updateTimesliderstate: undefined,
   updateAsofdate: undefined,

@@ -7,7 +7,7 @@ import MapDisplay from "./components/MapDisplay";
 import ActionPanel from "./components/ActionPanel";
 import Header from "./components/Header";
 import MainChart from "./components/MainChart";
-import { contractPackage } from "./uniqueValues";
+import { contractPackage, superurgent_items } from "./uniqueValues";
 import UndergroundSwitch from "./components/UndergroundSwitch";
 
 export function App(): React.JSX.Element {
@@ -46,6 +46,9 @@ export function App(): React.JSX.Element {
     contractPackage[0],
   );
   const [statusdatefield, setStatusdatefield] = useState<any>();
+  const [superurgenttype, setSuperurgenttype] = useState<any>(
+    superurgent_items[0],
+  );
   const [datefields, setDatefields] = useState<any>();
   const [timesliderstate, setTimesliderstate] = useState<boolean>(false);
   const [asofdate, setAsofdate] = useState<any>();
@@ -63,6 +66,10 @@ export function App(): React.JSX.Element {
 
   const updateStatusdatefield = (newStatusfield: any) => {
     setStatusdatefield(newStatusfield);
+  };
+
+  const updateSuperurgenttype = (newSuperurgenttype: any) => {
+    setSuperurgenttype(newSuperurgenttype);
   };
 
   const updateDatefields = (newDateFields: any) => {
@@ -120,6 +127,7 @@ export function App(): React.JSX.Element {
             value={{
               contractpackages,
               statusdatefield,
+              superurgenttype,
               datefields,
               timesliderstate,
               asofdate,
@@ -132,6 +140,7 @@ export function App(): React.JSX.Element {
               utilityLinestats,
               updateContractPackage,
               updateStatusdatefield,
+              updateSuperurgenttype,
               updateDatefields,
               updateTimesliderstate,
               updateAsofdate,

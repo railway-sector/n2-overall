@@ -9,7 +9,6 @@ import "@arcgis/map-components/components/arcgis-layer-list";
 import "@arcgis/map-components/components/arcgis-legend";
 import "@arcgis/map-components/components/arcgis-direct-line-measurement-3d";
 import "@arcgis/map-components/components/arcgis-area-measurement-3d";
-import { defineActions } from "../uniqueValues";
 import {
   ngcp_tagged_structureLayer,
   ngcp_working_area,
@@ -17,6 +16,7 @@ import {
   utilityLineNGCP,
 } from "../layers";
 import HandedOverAreaChart from "./HandedOverAreaChart";
+import { defineActions } from "../Query";
 
 function ActionPanel() {
   const [activeWidget, setActiveWidget] = useState(null);

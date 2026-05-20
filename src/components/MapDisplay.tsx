@@ -11,7 +11,6 @@ import type { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene
 import {
   structureLayer,
   pierAccessLayer,
-  prowLayer,
   handedOverLotLayer,
   viaductLayer,
   buildingLayer,
@@ -56,7 +55,6 @@ export default function MapDisplay() {
     arcgisScene?.map?.add(nloLoOccupancyGroupLayer);
     arcgisScene?.map?.add(meralco_tss10_groupLayer);
     arcgisScene?.map?.add(alignmentGroupLayer);
-    arcgisScene?.map?.add(prowLayer);
     arcgisScene?.map?.add(handedOverLotLayer);
     // arcgisScene?.map?.add(maintenanceRoadLayer);
 

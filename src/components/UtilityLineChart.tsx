@@ -1,24 +1,22 @@
 import { useEffect, useRef, useState, use } from "react";
-import { utilityLineLayer, utilityLineLayer1 } from "../layers";
+import { queryc, utilityLineLayer, utilityLineLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import {
-  chartDataColumnSries,
-  chartRendererColumn,
-  queryDefinitionExpression,
-  queryExpression,
-} from "../Query";
-import {
+  cpField,
   utility_statusField,
   utility_typeField,
+  utilityStatusArray,
   utilityTypeChart,
   viaductStatusColorForChart,
 } from "../uniqueValues";
-
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
+import { chartDataColumnSries } from "../ChartGenerator";
+import { queryDefinitionExpression } from "../QueryExpression";
+import { chartRendererColumn } from "../ChartRenderer";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -45,17 +43,20 @@ const UtilityLineChart = () => {
   const chartID = "utility-line-bar";
 
   useEffect(() => {
+    queryc.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+    queryc.qFields = [cpField];
+
     queryDefinitionExpression({
-      queryExpression: queryExpression({
-        contractcp: contractpackages,
-      }),
+      queryExpression: queryc.queryExpression(),
       featureLayer: [utilityLineLayer, utilityLineLayer1],
     });
 
     chartDataColumnSries({
-      contractp: contractpackages,
-      typeList: utilityTypeChart,
-      typeField: utility_typeField,
+      qChart: queryc.queryExpression(),
+      chartCategoryTypes: utilityTypeChart,
+      chartCategoryTypeField: utility_typeField,
       layer: utilityLineLayer,
       statusstate: [0, 1],
       statusField: utility_statusField,
@@ -132,17 +133,17 @@ const UtilityLineChart = () => {
     legendRef.current = legend;
 
     chartRendererColumn({
-      layer: utilityLineLayer,
-      layer2: utilityLineLayer1,
-      layerName: "utility",
       root: root,
       chart: chart,
       data: chartData,
-      typeArray: utilityTypeChart,
-      typeField: utility_typeField,
-      contractcp: contractpackages,
+      layers: [utilityLineLayer, utilityLineLayer1],
+      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Field: cpField,
+      chartCategoryTypes: utilityTypeChart,
+      chartCategoryTypeField: utility_typeField,
       statusTypename: ["Completed", "To be Constructed"],
       statusStatename: ["comp", "incomp"],
+      statusArray: utilityStatusArray,
       statusField: utility_statusField,
       seriesStatusColor: viaductStatusColorForChart,
       strokeColor: chartBorderLineColor,

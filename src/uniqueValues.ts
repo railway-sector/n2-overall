@@ -1,12 +1,15 @@
-import Collection from "@arcgis/core/core/Collection";
-import ActionButton from "@arcgis/core/support/actions/ActionButton";
 import TextSymbol3DLayer from "@arcgis/core/symbols/TextSymbol3DLayer";
 import LabelSymbol3D from "@arcgis/core/symbols/LabelSymbol3D";
 import LineCallout3D from "@arcgis/core/symbols/callouts/LineCallout3D";
-import { ngcp_tagged_structureLayer } from "./layers";
-import type { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
 
-const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+export type statisticsType = "count" | "sum";
+export type StatusTypenamesType =
+  | "To be Constructed"
+  | "Under Construction"
+  | "delayed"
+  | "Completed";
+export type StatusStateType = "comp" | "incomp" | "ongoing" | "delayed";
+export type LayerNameType = "utility" | "viaduct" | "others";
 
 interface labelSymbol3DProps {
   materialColor: any;
@@ -73,14 +76,6 @@ export const labelSymbol3DLine = ({
 };
 
 //--- type definitions
-export type StatusTypenamesType =
-  | "To be Constructed"
-  | "Under Construction"
-  | "delayed"
-  | "Completed";
-export type StatusStateType = "comp" | "incomp" | "ongoing" | "delayed";
-export type LayerNameType = "utility" | "viaduct" | "others";
-
 export const contractPackage = ["All", "N-01", "N-02", "N-03", "N-04"];
 
 // month
@@ -216,6 +211,7 @@ export const structureStatusLabel = [
   "For Offer to Compensate",
   "For Notice of Taking",
   "No Need to Acquire",
+  "For Expropriation",
 ];
 
 export const structureStatusColorHex = [
@@ -226,6 +222,7 @@ export const structureStatusColorHex = [
   "#FFAA00",
   "#FF5733", //'#FF0000',
   "#B2BEB5",
+  "#FF0000",
 ];
 
 export const structureStatusColorRgb = [
@@ -236,6 +233,7 @@ export const structureStatusColorRgb = [
   [255, 170, 0, 0.6],
   [255, 83, 73, 0.6],
   [178, 190, 181, 0.6],
+  [255, 0, 0, 0.6],
 ];
 
 export const structureStatusQuery = structureStatusLabel.map(
@@ -328,28 +326,15 @@ export const statusTreeCutting: string[] = [
   "Ongoing Acquisition of Application Documents",
 ];
 
-export const statusTreeCuttingChart = [
-  {
-    category: statusTreeCutting[0],
-    value: 1,
-    color: colorsCutting[0],
+export const statusTreeCuttingChart = statusTreeCutting.map(
+  (status: any, index: any) => {
+    return Object.assign({
+      category: status,
+      value: index + 1,
+      color: colorsCutting[index],
+    });
   },
-  {
-    category: statusTreeCutting[1],
-    value: 2,
-    color: colorsCutting[1],
-  },
-  {
-    category: statusTreeCutting[2],
-    value: 3,
-    color: colorsCutting[2],
-  },
-  {
-    category: statusTreeCutting[3],
-    value: 4,
-    color: colorsCutting[3],
-  },
-];
+);
 
 //--- Tree Compensation ---//
 export const treeCompen_status_field = "Compensation";
@@ -360,30 +345,22 @@ export const statusTreeCompensation: string[] = [
   "Compensated",
 ];
 
-export const statusTreeCompensationChart = [
-  {
-    category: statusTreeCompensation[0],
-    value: 1,
-    color: colorsCompen[0],
+export const statusTreeCompensationChart = statusTreeCompensation.map(
+  (status: any, index: any) => {
+    return Object.assign({
+      category: status,
+      value: index + 1,
+      color: colorsCompen[index],
+    });
   },
-  {
-    category: statusTreeCompensation[1],
-    value: 2,
-    color: colorsCompen[1],
-  },
-  {
-    category: statusTreeCompensation[2],
-    value: 3,
-    color: colorsCompen[2],
-  },
-];
+);
 
 //---------------------------------------------//
 //             Utility Relocation              //
 //---------------------------------------------//
 export const utility_statusField = "Status";
 export const utility_typeField = "UtilType";
-export const utilityTypes = ["Telecom", "Water", "Sewage", "Power"];
+export const utilityTypeLabels = ["Telecom", "Water", "Sewage", "Power"];
 export const utilityType_domain = [1, 2, 3, 4];
 export const utility_point_icons = [
   "https://EijiGorilla.github.io/Symbols/Telecom_Logo2.svg",
@@ -393,13 +370,26 @@ export const utility_point_icons = [
   "https://EijiGorilla.github.io/Symbols/Power_Logo2.svg",
 ];
 
-export const utilityTypeChart = utilityTypes.map((type: any, index: any) => {
-  return Object.assign({
-    category: type,
-    value: utilityType_domain[index],
-    icon: utility_point_icons[index],
-  });
-});
+export const utilityTypeChart = utilityTypeLabels.map(
+  (label: any, index: any) => {
+    return Object.assign({
+      category: label,
+      value: utilityType_domain[index],
+      icon: utility_point_icons[index],
+    });
+  },
+);
+
+export const utilityStatusLabels = ["incomp", "comp"];
+export const utilityStatusValues = [0, 1];
+export const utilityStatusArray = utilityStatusLabels.map(
+  (status: any, index: any) => {
+    return Object.assign({
+      status: status,
+      value: utilityStatusValues[index],
+    });
+  },
+);
 
 export const utilityCompanyField = "Comp_Agency";
 export const utilityRemarksField = "Remarks";
@@ -588,140 +578,11 @@ export const viatypes = viaduct_category_label.map(
   },
 );
 
-// Thousand separators function
-export function thousands_separators(num: any) {
-  if (num) {
-    const num_parts = num.toString().split(".");
-    num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return num_parts.join(".");
-  }
-}
-
-export function zoomToLayer(layer: any, view: any) {
-  return layer.queryExtent().then((response: any) => {
-    view
-      ?.goTo(response.extent, {
-        //response.extent
-        speedFactor: 2,
-      })
-      .catch((error: any) => {
-        if (error.name !== "AbortError") {
-          console.error(error);
-        }
-      });
+export const viaStatusLabels = ["incomp", "ongoing", "delayed", "comp"];
+export const viaStatusValues = [1, 2, 3, 4];
+export const viaStatusArray = viaStatusLabels.map((status: any, index: any) => {
+  return Object.assign({
+    status: status,
+    value: viaStatusValues[index],
   });
-}
-
-let highlight: any;
-export function highlightLot(layer: any, view: any) {
-  view?.whenLayerView(layer).then((urgentLayerView: any) => {
-    const query = layer.createQuery();
-    layer.queryFeatures(query).then((results: any) => {
-      const length = results.features.length;
-      const objID = [];
-      for (let i = 0; i < length; i++) {
-        const obj = results.features[i].attributes.OBJECTID;
-        objID.push(obj);
-      }
-
-      if (highlight) {
-        highlight.remove();
-      }
-      highlight = urgentLayerView.highlight(objID);
-    });
-  });
-}
-
-export function highlightRemove() {
-  if (highlight) {
-    highlight.remove();
-  }
-}
-
-export function defineActions(event: any) {
-  const { item } = event;
-  if (item.title === "Sapang Balen River Realignment") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-sapangbalenriver",
-        }),
-      ]),
-    ]);
-  }
-
-  if (item.title === "NGCP Line") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-ngcpline",
-        }),
-      ]),
-    ]);
-  }
-
-  if (item.title === "NGCP Pole Relocation Working Area") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-ngcpworkarea",
-        }),
-      ]),
-    ]);
-  }
-
-  if (item.title === "NGCP Pole Relocation Tagged Structures") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-taggedstructure",
-        }),
-      ]),
-    ]);
-
-    highlightLot(ngcp_tagged_structureLayer, arcgisScene);
-  }
-
-  if (item.layer.type !== "group") {
-    item.panel = {
-      content: "legend",
-      open: true,
-    };
-  }
-
-  item.title === "Chainage" ||
-  item.title === "Temporary Fencing" ||
-  item.title === "Permanent Fencing" ||
-  item.title === "Maintenance Road" ||
-  item.title === "Drainage" ||
-  item.title === "Provision for Freight Line" ||
-  item.title === "Households" ||
-  item.title === "Households Ownership (Structure)" ||
-  item.title === "Occupancy (Structure)" ||
-  item.title === "Structure" ||
-  item.title === "NGCP Pole Relocation Working Area" ||
-  item.title === "NGCP Pole Relocation Tagged Structures" ||
-  item.title === "Land Acquisition (Endorsed Status)" ||
-  item.title === "Super Urgent Lot" ||
-  item.title === "Handed-Over (public + private)" ||
-  item.title === "Tree Cutting" ||
-  item.title === "Tree Compensation" ||
-  item.title === "Point (symbol)" ||
-  item.title === "Point (status)" ||
-  item.title === "Line (symbol)" ||
-  item.title === "Line (status)" ||
-  item.title === "Pier Head/Column" ||
-  item.title === "Viaduct" ||
-  item.title === "MERALCO TSS 10" ||
-  item.title === "Station Structures"
-    ? (item.visible = false)
-    : (item.visible = true);
-}
+});

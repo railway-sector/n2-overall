@@ -1,28 +1,26 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useEffect, useRef, useState, use } from "react";
-import { pierAccessLayer, viaductLayer } from "../layers";
+import { pierAccessLayer, queryc, viaductLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import {
-  chartDataColumnSries,
-  chartRendererColumn,
-  queryDefinitionExpression,
-  queryExpression,
-} from "../Query";
 import "@esri/calcite-components/dist/components/calcite-panel";
 import "@esri/calcite-components/dist/components/calcite-button";
 import { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-
+import { chartDataColumnSries } from "../ChartGenerator";
+import { queryDefinitionExpression } from "../QueryExpression";
 import {
+  cpField,
   status_field,
   type_field,
   viaductStatusColorForChart,
+  viaStatusArray,
   viatypes,
 } from "../uniqueValues";
+import { chartRendererColumn } from "../ChartRenderer";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -46,17 +44,20 @@ const ViaductChart = () => {
   const chartID = "viaduct-bar";
 
   useEffect(() => {
+    queryc.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+    queryc.qFields = [cpField];
+
     queryDefinitionExpression({
-      queryExpression: queryExpression({
-        contractcp: contractpackages,
-      }),
+      queryExpression: queryc.queryExpression(),
       featureLayer: [pierAccessLayer, viaductLayer],
     });
 
     chartDataColumnSries({
-      contractp: contractpackages,
-      typeList: viatypes,
-      typeField: type_field,
+      qChart: queryc.queryExpression(),
+      chartCategoryTypes: viatypes,
+      chartCategoryTypeField: type_field,
       layer: viaductLayer,
       statusstate: [1, 2, 4],
       statusField: status_field,
@@ -136,16 +137,17 @@ const ViaductChart = () => {
     legendRef.current = legend;
 
     chartRendererColumn({
-      layer: viaductLayer,
-      layerName: "viaduct",
       root: root,
       chart: chart,
       data: chartData,
-      typeArray: viatypes,
-      typeField: type_field,
-      contractcp: contractpackages,
+      layers: [viaductLayer],
+      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Field: cpField,
+      chartCategoryTypes: viatypes,
+      chartCategoryTypeField: type_field,
       statusTypename: ["Completed", "To be Constructed", "Under Construction"],
       statusStatename: ["comp", "incomp", "ongoing"],
+      statusArray: viaStatusArray,
       statusField: status_field,
       seriesStatusColor: viaductStatusColorForChart,
       strokeColor: chartBorderLineColor,
@@ -158,8 +160,7 @@ const ViaductChart = () => {
       legend: legend,
       updateChartPanelwidth: updateChartPanelwidth,
     });
-
-    // chart.appear(1000, 100);
+    chart.appear(1000, 100);
 
     return () => {
       root.dispose();
