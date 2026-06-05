@@ -33,11 +33,7 @@ import {
 import "@arcgis/map-components/dist/components/arcgis-scene";
 import "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import {
-  pieChartStatusData,
-  totalFieldCount,
-  totalFieldSum,
-} from "../ChartGenerator";
+import { pieChartStatusData, fieldStatistic } from "../ChartGenerator";
 import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
 
@@ -159,28 +155,31 @@ const LotChart = () => {
     });
 
     //--- total number of lots (public + private)
-    totalFieldCount({
+    fieldStatistic({
       qChart: queryc.queryExpression(),
       layer: lotLayer,
-      idField: lotIdField,
+      statisticField: lotIdField,
+      statisticType: "count",
     }).then((result: any) => {
       setLotNumber(result);
     });
 
     //-- Total affected area
-    totalFieldSum({
+    fieldStatistic({
       qChart: queryc.queryExpression(),
       layer: lotLayer,
-      valueSumField: affectedAreaField,
+      statisticField: affectedAreaField,
+      statisticType: "sum",
     }).then((result: any) => {
       setTotalAffectedArea(result);
     });
 
     //--- Total handed-over area
-    totalFieldSum({
+    fieldStatistic({
       qChart: queryc.queryExpression(),
       layer: lotLayer,
-      valueSumField: lotHandedOverAreaField,
+      statisticField: lotHandedOverAreaField,
+      statisticType: "sum",
     }).then((result: any) => {
       setHandedOverArea(result);
     });
@@ -193,10 +192,11 @@ const LotChart = () => {
     queryc2.qExpression = `${lotStatusField} <> 8`;
     queryc2.q2Expression = qSuperrugent_expression;
 
-    totalFieldSum({
+    fieldStatistic({
       qChart: queryc2.queryExpression(),
       layer: lotLayer,
-      valueSumField: lotHandedOverField,
+      statisticField: lotHandedOverField,
+      statisticType: "sum",
     }).then((result: any) => {
       setHandedOverNumber(result);
     });
