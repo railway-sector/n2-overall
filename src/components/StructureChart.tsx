@@ -17,12 +17,11 @@ import {
   updatedDateCategoryNames,
   valueLabelColor,
   structureStatusColorHex,
-  cpField,
   // structurePteField,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { occupancyLayer, queryc, structureLayer } from "../layers";
+import { occupancyLayer, queryc, queryc3, structureLayer } from "../layers";
 import { pieChartStatusData } from "../ChartGenerator";
 import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
@@ -75,7 +74,7 @@ const StructureChart = () => {
     queryc.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
+
     queryDefinitionExpression({
       queryExpression: queryc.queryExpression(),
       featureLayer: [structureLayer, occupancyLayer],
@@ -141,14 +140,17 @@ const StructureChart = () => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
+    queryc3.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+
     // Render chart
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      q1Value: contractpackages === "All" ? undefined : contractpackages,
-      q1Field: cpField,
+      qChart: queryc3,
       status_field: structureStatusField,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

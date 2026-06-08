@@ -3,7 +3,7 @@ import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/rest/support/Query";
 import { thousands_separators } from "./Query";
-import { queryc3, querycColumn } from "./layers";
+import { querycColumn } from "./layers";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import { type StatusStateType, type StatusTypenamesType } from "./uniqueValues";
 
@@ -191,8 +191,9 @@ interface chartType {
   pieSeries: any;
   legend: any;
   root: any;
-  q1Value: any;
-  q1Field: any;
+  qChart: any;
+  q1Value?: any;
+  q1Field?: any;
   q2Value?: any;
   q2Field?: any;
   q3Value?: any;
@@ -214,8 +215,7 @@ export function chartRenderer({
   pieSeries,
   legend,
   root,
-  q1Value,
-  q1Field,
+  qChart,
   q2Expression,
   status_field,
   arcgisScene,
@@ -273,14 +273,12 @@ export function chartRenderer({
       ? `${status_field} = ${statusSelected}`
       : `${status_field} = '${statusSelected}'`;
 
-    queryc3.qValues = [q1Value];
-    queryc3.qFields = [q1Field];
-    queryc3.qExpression = queryField;
-    queryc3.q2Expression = q2Expression;
+    qChart.qExpression = queryField;
+    qChart.q2Expression = q2Expression;
 
     highlightFilterLayerView({
       layer: layer,
-      qExpression: queryc3.queryExpression(),
+      qExpression: qChart.queryExpression(),
       view: arcgisScene?.view,
     });
   });

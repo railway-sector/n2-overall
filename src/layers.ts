@@ -73,7 +73,7 @@ import QueryExpressionLayers from "query-layers-expression";
 
 export const queryc = new QueryExpressionLayers(
   undefined,
-  undefined,
+  [cpField],
   undefined,
   undefined,
   "string",
@@ -85,7 +85,7 @@ export const queryc = new QueryExpressionLayers(
 
 export const queryc2 = new QueryExpressionLayers(
   undefined,
-  undefined,
+  [cpField],
   undefined,
   undefined,
   "string",
@@ -97,7 +97,7 @@ export const queryc2 = new QueryExpressionLayers(
 
 export const queryc3 = new QueryExpressionLayers(
   undefined,
-  undefined,
+  [cpField],
   undefined,
   undefined,
   "string",
@@ -109,7 +109,7 @@ export const queryc3 = new QueryExpressionLayers(
 
 export const querycColumn = new QueryExpressionLayers(
   undefined,
-  undefined,
+  [cpField],
   undefined,
   undefined,
   "string",

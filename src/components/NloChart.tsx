@@ -17,7 +17,7 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { nloLayer, queryc } from "../layers";
+import { nloLayer, queryc, queryc3 } from "../layers";
 import { pieChartStatusData } from "../ChartGenerator";
 import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
@@ -69,15 +69,16 @@ const NloChart = memo(() => {
       contractpackages === "All" ? undefined : contractpackages,
     ];
     queryc.qFields = [cpField];
+    // queryc.qExpression = "StatusRC >= 1";
 
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: `${queryc.queryExpression()} AND ${nloStatusField} >= 1`,
       featureLayer: [nloLayer],
     });
 
     //--- chart data
     pieChartStatusData({
-      qChart: queryc.queryExpression(),
+      qChart: `${queryc.queryExpression()} AND ${nloStatusField} >= 1`,
       layer: nloLayer,
       statusList: nloStatusQuery,
       statusColor: nloStatusColor,
@@ -142,14 +143,17 @@ const NloChart = memo(() => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
+    queryc3.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+
     // Render chart
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      q1Value: contractpackages === "All" ? undefined : contractpackages,
-      q1Field: cpField,
+      qChart: queryc3,
       status_field: nloStatusField,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

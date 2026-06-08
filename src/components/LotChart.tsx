@@ -1,5 +1,11 @@
 import { use, useEffect, useRef, useState } from "react";
-import { handedOverLotLayer, lotLayer, queryc, queryc2 } from "../layers";
+import {
+  handedOverLotLayer,
+  lotLayer,
+  queryc,
+  queryc2,
+  queryc3,
+} from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -250,14 +256,17 @@ const LotChart = () => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
+    queryc3.qValues = [
+      contractpackages === "All" ? undefined : contractpackages,
+    ];
+
     // Render chart
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      q1Value: contractpackages === "All" ? undefined : contractpackages,
-      q1Field: cpField,
+      qChart: queryc3,
       q2Expression: superurgenttype === "OFF" ? undefined : querySuperUrgent,
       status_field: lotStatusField,
       arcgisScene: arcgisScene,
