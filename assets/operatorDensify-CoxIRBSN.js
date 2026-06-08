@@ -1,0 +1,1 @@
+import{cc as c}from"./index-DF2d-Rmw.js";import{o as s}from"./ProjectionTransformation-DxiJ-bBr.js";const e=new s;function m(n,r,t,o){return e.execute(n,r,t,o,null)}function p(n,r,t,o){const u=e.executeMany(new c(n),r,t,o,null);return Array.from(u)}function a(){return e.supportsCurves()}export{p as o,m as t,a as u};

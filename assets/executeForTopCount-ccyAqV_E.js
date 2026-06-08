@@ -1,0 +1,1 @@
+import{ew as m}from"./index-DF2d-Rmw.js";import{a as n}from"./queryTopFeatures-OkeJ6u1f.js";import e from"./TopFeaturesQuery-FaOAq7Oi.js";async function i(o,t,r){const a=m(o);return(await n(a,e.from(t),{...r})).data.count}export{i as executeForTopCount};
