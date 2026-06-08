@@ -83,6 +83,7 @@ const NloChart = memo(() => {
       statusList: nloStatusQuery,
       statusColor: nloStatusColor,
       statusField: nloStatusField,
+      statisticField: nloStatusField,
       statisticType: "count",
     }).then((result: any) => {
       SetNloData(result[0]);

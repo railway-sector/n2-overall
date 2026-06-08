@@ -140,7 +140,7 @@ const LotChart = () => {
     queryc.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
+    // queryc.qFields = [cpField];
     queryc.q2Expression = qSuperrugent_expression;
 
     queryDefinitionExpression({
@@ -148,6 +148,7 @@ const LotChart = () => {
       featureLayer: [lotLayer, handedOverLotLayer],
     });
 
+    console.log(queryc.queryExpression());
     //--- chart data
     pieChartStatusData({
       qChart: queryc.queryExpression(),
@@ -155,8 +156,10 @@ const LotChart = () => {
       statusList: lotStatusQuery,
       statusColor: lotStatusColor,
       statusField: lotStatusField,
+      statisticField: lotStatusField,
       statisticType: "count",
     }).then((result: any) => {
+      console.log(result);
       setLotData(result[0]);
     });
 

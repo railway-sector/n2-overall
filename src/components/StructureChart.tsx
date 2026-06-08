@@ -87,6 +87,7 @@ const StructureChart = () => {
       statusList: structureStatusQuery,
       statusColor: structureStatusColorHex,
       statusField: structureStatusField,
+      statisticField: structureStatusField,
       statisticType: "count",
     }).then((result: any) => {
       setStructureData(result[0]);
