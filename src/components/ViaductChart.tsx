@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useEffect, useRef, useState, use } from "react";
-import { pierAccessLayer, queryc, viaductLayer } from "../layers";
+import { pierAccessLayer, queryc_via, viaductLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -11,7 +11,6 @@ import "@esri/calcite-components/dist/components/calcite-button";
 import { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { chartDataColumnSries } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import {
   cpField,
   status_field,
@@ -21,6 +20,7 @@ import {
   viatypes,
 } from "../uniqueValues";
 import { chartRendererColumn } from "../ChartRenderer";
+import { queryDefinitionExpression } from "../Query";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -44,18 +44,17 @@ const ViaductChart = () => {
   const chartID = "viaduct-bar";
 
   useEffect(() => {
-    queryc.qValues = [
+    queryc_via.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
 
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: queryc_via.queryExpression(),
       featureLayer: [pierAccessLayer, viaductLayer],
     });
 
     chartDataColumnSries({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_via.queryExpression(),
       chartCategoryTypes: viatypes,
       chartCategoryTypeField: type_field,
       layer: viaductLayer,

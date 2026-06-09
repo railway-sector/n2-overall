@@ -1,20 +1,19 @@
 import { useEffect, useRef, useState, use } from "react";
-import { queryc, queryc3, treeCompensationLayer } from "../layers";
+import { queryc_treecomp, treeCompensationLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import {
   colorsCompen,
-  cpField,
   statusTreeCompensationChart,
   treeCompen_status_field,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { pieChartStatusData } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
+import { queryDefinitionExpression } from "../Query";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -41,18 +40,17 @@ const TreeCompensationChart = () => {
   const chartid = "pie-compen";
 
   useEffect(() => {
-    queryc.qValues = [
+    queryc_treecomp.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
 
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: queryc_treecomp.queryExpression(),
       featureLayer: [treeCompensationLayer],
     });
 
     pieChartStatusData({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_treecomp.queryExpression(),
       layer: treeCompensationLayer,
       statusList: statusTreeCompensationChart,
       statusColor: colorsCompen,
@@ -113,16 +111,12 @@ const TreeCompensationChart = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    queryc3.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
-
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      qChart: queryc3,
+      qChart: queryc_treecomp,
       status_field: treeCompen_status_field,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

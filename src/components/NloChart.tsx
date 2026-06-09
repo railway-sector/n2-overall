@@ -4,7 +4,11 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import { dateUpdate, thousands_separators } from "../Query";
+import {
+  dateUpdate,
+  thousands_separators,
+  queryDefinitionExpression,
+} from "../Query";
 import {
   cutoff_days,
   nloStatusField,
@@ -13,13 +17,11 @@ import {
   updatedDateCategoryNames,
   valueLabelColor,
   nloStatusColor,
-  cpField,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { nloLayer, queryc, queryc3 } from "../layers";
+import { nloLayer, queryc_nlo } from "../layers";
 import { pieChartStatusData } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
@@ -65,20 +67,17 @@ const NloChart = memo(() => {
   const chartID = "nlo-chart";
 
   useEffect(() => {
-    queryc.qValues = [
+    queryc_nlo.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
-    // queryc.qExpression = "StatusRC >= 1";
-
+    queryc_nlo.qExpression = `${nloStatusField} >= 1`;
     queryDefinitionExpression({
-      queryExpression: `${queryc.queryExpression()} AND ${nloStatusField} >= 1`,
+      queryExpression: queryc_nlo.queryExpression(),
       featureLayer: [nloLayer],
     });
-
     //--- chart data
     pieChartStatusData({
-      qChart: `${queryc.queryExpression()} AND ${nloStatusField} >= 1`,
+      qChart: queryc_nlo.queryExpression(),
       layer: nloLayer,
       statusList: nloStatusQuery,
       statusColor: nloStatusColor,
@@ -144,17 +143,13 @@ const NloChart = memo(() => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    queryc3.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
-
     // Render chart
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      qChart: queryc3,
+      qChart: queryc_nlo,
       status_field: nloStatusField,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

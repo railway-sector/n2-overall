@@ -7,6 +7,7 @@ import {
   dateUpdate,
   thousands_separators,
   // totalFieldCount,
+  queryDefinitionExpression,
 } from "../Query";
 import "../index.css";
 import {
@@ -21,9 +22,8 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { occupancyLayer, queryc, queryc3, structureLayer } from "../layers";
+import { occupancyLayer, queryc_struc, structureLayer } from "../layers";
 import { pieChartStatusData } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
@@ -71,18 +71,17 @@ const StructureChart = () => {
   const [structureNumber, setStructureNumber] = useState<number>(0);
 
   useEffect(() => {
-    queryc.qValues = [
+    queryc_struc.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: queryc_struc.queryExpression(),
       featureLayer: [structureLayer, occupancyLayer],
     });
 
     //--- chart data
     pieChartStatusData({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_struc.queryExpression(),
       layer: structureLayer,
       statusList: structureStatusQuery,
       statusColor: structureStatusColorHex,
@@ -141,17 +140,13 @@ const StructureChart = () => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    queryc3.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
-
     // Render chart
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      qChart: queryc3,
+      qChart: queryc_struc,
       status_field: structureStatusField,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

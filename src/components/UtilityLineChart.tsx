@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, use } from "react";
-import { queryc, utilityLineLayer, utilityLineLayer1 } from "../layers";
+import { queryc_utill, utilityLineLayer, utilityLineLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -15,8 +15,8 @@ import {
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { chartDataColumnSries } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRendererColumn } from "../ChartRenderer";
+import { queryDefinitionExpression } from "../Query";
 
 // Dispose function
 function maybeDisposeRoot(divId: any) {
@@ -43,18 +43,17 @@ const UtilityLineChart = () => {
   const chartID = "utility-line-bar";
 
   useEffect(() => {
-    queryc.qValues = [
+    queryc_utill.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
 
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: queryc_utill.queryExpression(),
       featureLayer: [utilityLineLayer, utilityLineLayer1],
     });
 
     chartDataColumnSries({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_utill.queryExpression(),
       chartCategoryTypes: utilityTypeChart,
       chartCategoryTypeField: utility_typeField,
       layer: utilityLineLayer,

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState, use } from "react";
-import { queryc, queryc3, treeCuttingLayer } from "../layers";
+import { queryc_treecut, treeCuttingLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import { thousands_separators, dateUpdate } from "../Query";
+import {
+  thousands_separators,
+  dateUpdate,
+  queryDefinitionExpression,
+} from "../Query";
 import {
   colorsCutting,
-  cpField,
   cutoff_days,
   primaryLabelColor,
   statusTreeCuttingChart,
@@ -18,7 +21,6 @@ import {
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { pieChartStatusData } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
@@ -62,18 +64,17 @@ const TreeCuttingChart = () => {
   const [treesNumber, setTreesNumber] = useState<Number>(0);
 
   useEffect(() => {
-    queryc.qValues = [
+    queryc_treecut.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
 
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: queryc_treecut.queryExpression(),
       featureLayer: [treeCuttingLayer],
     });
 
     pieChartStatusData({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_treecut.queryExpression(),
       layer: treeCuttingLayer,
       statusList: statusTreeCuttingChart,
       statusColor: colorsCutting,
@@ -135,17 +136,13 @@ const TreeCuttingChart = () => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    queryc3.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
-
     // Render chart
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      qChart: queryc3,
+      qChart: queryc_treecut,
       status_field: treeStatus_field,
       arcgisScene: arcgisScene,
       updateChartPanelwidth: updateChartPanelwidth,

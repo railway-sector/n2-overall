@@ -71,8 +71,8 @@ import {
 import { labelSymbol3DLine } from "./uniqueValues";
 import QueryExpressionLayers from "query-layers-expression";
 
-export const queryc = new QueryExpressionLayers(
-  undefined,
+export const queryc_lot = new QueryExpressionLayers(
+  [undefined, undefined],
   [cpField],
   undefined,
   undefined,
@@ -83,8 +83,8 @@ export const queryc = new QueryExpressionLayers(
   undefined,
 );
 
-export const queryc2 = new QueryExpressionLayers(
-  undefined,
+export const queryc_lot2 = new QueryExpressionLayers(
+  [undefined, undefined],
   [cpField],
   undefined,
   undefined,
@@ -95,8 +95,56 @@ export const queryc2 = new QueryExpressionLayers(
   undefined,
 );
 
-export const queryc3 = new QueryExpressionLayers(
+export const queryc_lot3 = new QueryExpressionLayers(
+  [undefined, undefined],
+  [cpField],
   undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc_struc = new QueryExpressionLayers(
+  [undefined, undefined],
+  [cpField],
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc_nlo = new QueryExpressionLayers(
+  [undefined, undefined],
+  [cpField],
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc_treecut = new QueryExpressionLayers(
+  [undefined, undefined],
+  [cpField],
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc_treecomp = new QueryExpressionLayers(
+  [undefined, undefined],
   [cpField],
   undefined,
   undefined,
@@ -108,6 +156,42 @@ export const queryc3 = new QueryExpressionLayers(
 );
 
 export const querycColumn = new QueryExpressionLayers(
+  undefined,
+  [cpField],
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc_utilp = new QueryExpressionLayers(
+  undefined,
+  [cpField],
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc_utill = new QueryExpressionLayers(
+  undefined,
+  [cpField],
+  undefined,
+  undefined,
+  "string",
+  0,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const queryc_via = new QueryExpressionLayers(
   undefined,
   [cpField],
   undefined,

@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState, use } from "react";
-import { queryc, utilityPointLayer, utilityPointLayer1 } from "../layers";
+import { queryc_utilp, utilityPointLayer, utilityPointLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import { dateUpdate, thousands_separators } from "../Query";
+import {
+  dateUpdate,
+  queryDefinitionExpression,
+  thousands_separators,
+} from "../Query";
 import {
   cpField,
   cutoff_days,
@@ -17,11 +21,9 @@ import {
   valueLabelColor,
   viaductStatusColorForChart,
 } from "../uniqueValues";
-
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { chartDataColumnSries } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRendererColumn } from "../ChartRenderer";
 
 // Dispose function
@@ -60,18 +62,17 @@ const UtilityPointChart = () => {
   const [progress, setProgress] = useState<any>();
 
   useEffect(() => {
-    queryc.qValues = [
+    queryc_utilp.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc.qFields = [cpField];
 
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: queryc_utilp.queryExpression(),
       featureLayer: [utilityPointLayer, utilityPointLayer1],
     });
 
     chartDataColumnSries({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_utilp.queryExpression(),
       chartCategoryTypes: utilityTypeChart,
       chartCategoryTypeField: utility_typeField,
       layer: utilityPointLayer,

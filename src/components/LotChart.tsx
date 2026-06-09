@@ -2,9 +2,8 @@ import { use, useEffect, useRef, useState } from "react";
 import {
   handedOverLotLayer,
   lotLayer,
-  queryc,
-  queryc2,
-  queryc3,
+  queryc_lot2,
+  queryc_lot,
 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
@@ -16,13 +15,13 @@ import {
   highlightRemove,
   thousands_separators,
   zoomToLayer,
+  queryDefinitionExpression,
 } from "../Query";
 import "@esri/calcite-components/dist/components/calcite-segmented-control";
 import "@esri/calcite-components/dist/components/calcite-segmented-control-item";
 import "@esri/calcite-components/dist/components/calcite-checkbox";
 import {
   affectedAreaField,
-  cpField,
   cutoff_days,
   lotHandedOverAreaField,
   lotHandedOverField,
@@ -40,7 +39,6 @@ import "@arcgis/map-components/dist/components/arcgis-scene";
 import "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { pieChartStatusData, fieldStatistic } from "../ChartGenerator";
-import { queryDefinitionExpression } from "../QueryExpression";
 import { chartRenderer } from "../ChartRenderer";
 
 // Dispose function
@@ -137,21 +135,20 @@ const LotChart = () => {
     const qSuperrugent_expression =
       superurgenttype === "OFF" ? undefined : querySuperUrgent;
 
-    queryc.qValues = [
+    queryc_lot.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
     // queryc.qFields = [cpField];
-    queryc.q2Expression = qSuperrugent_expression;
+    queryc_lot.q2Expression = qSuperrugent_expression;
 
     queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
+      queryExpression: queryc_lot.queryExpression(),
       featureLayer: [lotLayer, handedOverLotLayer],
     });
 
-    console.log(queryc.queryExpression());
     //--- chart data
     pieChartStatusData({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_lot.queryExpression(),
       layer: lotLayer,
       statusList: lotStatusQuery,
       statusColor: lotStatusColor,
@@ -159,13 +156,12 @@ const LotChart = () => {
       statisticField: lotStatusField,
       statisticType: "count",
     }).then((result: any) => {
-      console.log(result);
       setLotData(result[0]);
     });
 
     //--- total number of lots (public + private)
     fieldStatistic({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_lot.queryExpression(),
       layer: lotLayer,
       statisticField: lotIdField,
       statisticType: "count",
@@ -175,7 +171,7 @@ const LotChart = () => {
 
     //-- Total affected area
     fieldStatistic({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_lot.queryExpression(),
       layer: lotLayer,
       statisticField: affectedAreaField,
       statisticType: "sum",
@@ -185,7 +181,7 @@ const LotChart = () => {
 
     //--- Total handed-over area
     fieldStatistic({
-      qChart: queryc.queryExpression(),
+      qChart: queryc_lot.queryExpression(),
       layer: lotLayer,
       statisticField: lotHandedOverAreaField,
       statisticType: "sum",
@@ -194,15 +190,14 @@ const LotChart = () => {
     });
 
     //--- Total handed-over lots
-    queryc2.qValues = [
+    queryc_lot2.qValues = [
       contractpackages === "All" ? undefined : contractpackages,
     ];
-    queryc2.qFields = [cpField];
-    queryc2.qExpression = `${lotStatusField} <> 8`;
-    queryc2.q2Expression = qSuperrugent_expression;
+    queryc_lot2.qExpression = `${lotStatusField} <> 8`;
+    queryc_lot2.q2Expression = qSuperrugent_expression;
 
     fieldStatistic({
-      qChart: queryc2.queryExpression(),
+      qChart: queryc_lot2.queryExpression(),
       layer: lotLayer,
       statisticField: lotHandedOverField,
       statisticType: "sum",
@@ -259,17 +254,13 @@ const LotChart = () => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    queryc3.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
-
     // Render chart
     chartRenderer({
       chart: chart,
       pieSeries: pieSeries,
       legend: legend,
       root: root,
-      qChart: queryc3,
+      qChart: queryc_lot,
       q2Expression: superurgenttype === "OFF" ? undefined : querySuperUrgent,
       status_field: lotStatusField,
       arcgisScene: arcgisScene,
