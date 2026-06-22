@@ -142,6 +142,7 @@ const ChartViaduct = () => {
       chart: chart,
       data: chartData,
       layers: [viaductLayer],
+      qChart: queryc_via,
       q1Value: cpackage === "All" ? undefined : cpackage,
       q1Field: cpField,
       chartCategoryTypes: viatypes,

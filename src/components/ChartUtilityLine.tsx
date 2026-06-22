@@ -122,6 +122,7 @@ const ChartUtilityLine = () => {
       chart: chart,
       data: chartData,
       layers: [utilityLineLayer, utilityLineLayer1],
+      qChart: queryc_utill,
       q1Value: cpackage === "All" ? undefined : cpackage,
       q1Field: cpField,
       chartCategoryTypes: utilityTypeChart,

@@ -153,6 +153,7 @@ const ChartUtilityPoint = () => {
       chart: chart,
       data: chartData,
       layers: [utilityPointLayer, utilityPointLayer1],
+      qChart: queryc_utilp,
       q1Value: cpackage === "All" ? undefined : cpackage,
       q1Field: cpField,
       chartCategoryTypes: utilityTypeChart,
