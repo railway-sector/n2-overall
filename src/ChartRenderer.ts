@@ -235,7 +235,7 @@ export function chartRenderer({
 }
 
 //--------------------------------//
-//    C olumn Chart (stacked)     //
+//    Column Chart (stacked)     //
 //--------------------------------//
 export function responsiveChartColumn(chart: any, legend: any) {
   chart.onPrivate("width", (width: any) => {
@@ -260,9 +260,7 @@ interface chartColumnType {
   root: any;
   chart: any;
   data: any;
-  qChart?: any;
-  q1Value: any;
-  q1Field: any;
+  qChart: any;
   chartCategoryTypes: any;
   chartCategoryTypeField: any;
   statusTypename: StatusTypenamesType[];
@@ -286,8 +284,6 @@ export function chartRendererColumn({
   chart,
   data,
   qChart,
-  q1Value,
-  q1Field,
   chartCategoryTypes,
   chartCategoryTypeField,
   statusTypename,
@@ -388,8 +384,6 @@ export function chartRendererColumn({
         chart: chart,
         data: data,
         qChart: qChart,
-        q1Value: q1Value,
-        q1Field: q1Field,
         chartCategoryTypes: chartCategoryTypes,
         chartCategoryTypeField: chartCategoryTypeField,
         statusTypename: statustype,
@@ -414,9 +408,7 @@ interface makeSeriesColumnType {
   root: any;
   chart: any;
   data: any;
-  qChart?: any;
-  q1Value: any;
-  q1Field: any;
+  qChart: any;
   chartCategoryTypes: any;
   chartCategoryTypeField: any;
   statusTypename: any;
@@ -439,8 +431,6 @@ export function makeSeriesColumn({
   chart,
   data,
   qChart,
-  q1Value,
-  q1Field,
   chartCategoryTypes,
   chartCategoryTypeField,
   statusTypename,
@@ -508,8 +498,6 @@ export function makeSeriesColumn({
     layers: layers,
     series: series,
     qChart: qChart,
-    q1Value: q1Value,
-    q1Field: q1Field,
     statusStatename: statusStatename,
     statusArray: statusArray,
     arcgisScene: arcgisScene,
@@ -524,9 +512,7 @@ export function makeSeriesColumn({
 interface clickSeriesColumnType {
   layers: any;
   series: any;
-  qChart?: any;
-  q1Value: any;
-  q1Field: any;
+  qChart: any;
   statusStatename: any;
   statusArray: any;
   arcgisScene: any;
@@ -540,8 +526,6 @@ export function clickSeriesColumn({
   layers,
   series,
   qChart,
-  q1Value,
-  q1Field,
   statusStatename,
   statusArray,
   arcgisScene,
@@ -554,8 +538,6 @@ export function clickSeriesColumn({
     const categorySelected = chartCategoryTypes.find(
       (emp: any) => emp.category === selected.category,
     ).value;
-    qChart.qValues = [q1Value];
-    qChart.qFields = [q1Field];
     qChart.chartCategory = categorySelected;
     qChart.chartCategoryType = "number";
     qChart.chartCategoryField = chartCategoryTypeField;

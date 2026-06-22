@@ -4,7 +4,6 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import { dateUpdate, thousands_separators } from "../query";
 import {
-  cpField,
   primaryLabelColor,
   updatedDateCategoryNames,
   utility_statusField,
@@ -154,8 +153,6 @@ const ChartUtilityPoint = () => {
       data: chartData,
       layers: [utilityPointLayer, utilityPointLayer1],
       qChart: queryc_utilp,
-      q1Value: cpackage === "All" ? undefined : cpackage,
-      q1Field: cpField,
       chartCategoryTypes: utilityTypeChart,
       chartCategoryTypeField: utility_typeField,
       statusTypename: ["Completed", "To be Constructed"],

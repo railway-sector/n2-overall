@@ -3,7 +3,6 @@ import { queryc_utill, utilityLineLayer, utilityLineLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import {
-  cpField,
   utility_statusField,
   utility_typeField,
   utilityStatusArray,
@@ -123,8 +122,6 @@ const ChartUtilityLine = () => {
       data: chartData,
       layers: [utilityLineLayer, utilityLineLayer1],
       qChart: queryc_utill,
-      q1Value: cpackage === "All" ? undefined : cpackage,
-      q1Field: cpField,
       chartCategoryTypes: utilityTypeChart,
       chartCategoryTypeField: utility_typeField,
       statusTypename: ["Completed", "To be Constructed"],

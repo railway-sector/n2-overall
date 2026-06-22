@@ -103,9 +103,9 @@ const ChartStructure = () => {
       categoryField: "category",
       valueField: "value",
       legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
-      radius: 45,
+      radius: 40,
       innerRadius: 28,
-      scale: 1.7,
+      // scale: 0.5,
     });
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);
@@ -208,7 +208,7 @@ const ChartStructure = () => {
           height: "67vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
-          marginBottom: "5%",
+          marginTop: "5%",
         }}
       ></div>
     </>

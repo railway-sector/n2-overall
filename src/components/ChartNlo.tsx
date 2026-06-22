@@ -105,7 +105,7 @@ const ChartNlo = memo(() => {
       legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
       radius: 45,
       innerRadius: 28,
-      scale: 1.7,
+      // scale: 1.7,
     });
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);

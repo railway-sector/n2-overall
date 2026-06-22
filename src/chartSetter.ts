@@ -47,7 +47,7 @@ interface seriesSetterType {
   legendValueText: any;
   radius: number;
   innerRadius: number;
-  scale: number;
+  scale?: number;
   marginTop?: number;
 }
 export function seriesSetter({
@@ -69,8 +69,8 @@ export function seriesSetter({
       legendValueText: legendValueText,
       radius: am5.percent(radius), // outer radius
       innerRadius: am5.percent(innerRadius),
-      scale: scale,
-      marginTop: marginTop && marginTop,
+      scale: scale ? scale : 1,
+      marginTop: marginTop ? marginTop : 0,
     }),
   );
 

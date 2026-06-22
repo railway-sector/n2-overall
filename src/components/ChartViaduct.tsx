@@ -10,7 +10,6 @@ import { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { chartDataColumnSries } from "../chartGenerator";
 import {
-  cpField,
   status_field,
   type_field,
   updatedDateCategoryNames,
@@ -143,8 +142,6 @@ const ChartViaduct = () => {
       data: chartData,
       layers: [viaductLayer],
       qChart: queryc_via,
-      q1Value: cpackage === "All" ? undefined : cpackage,
-      q1Field: cpField,
       chartCategoryTypes: viatypes,
       chartCategoryTypeField: type_field,
       statusTypename: ["Completed", "To be Constructed", "Under Construction"],
