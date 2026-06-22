@@ -6,19 +6,19 @@ import "@esri/calcite-components/components/calcite-panel";
 import "@esri/calcite-components/components/calcite-shell-panel";
 import "@arcgis/map-components/dist/components/arcgis-scene";
 import "@arcgis/map-components/components/arcgis-scene";
-import LotChart from "./LotChart";
+import ChartLot from "./ChartLot";
 import "../index.css";
-import StructureChart from "./StructureChart";
-import NloChart from "./NloChart";
+import ChartStructure from "./ChartStructure";
+import ChartNlo from "./ChartNlo";
 import { primaryLabelColor } from "../uniqueValues";
 import { useState } from "react";
-import TreeCuttingChart from "./TreeCuttingChart";
-import TreeCompensationChart from "./TreeCompensationChart";
-import ViaductChart from "./ViaductChart";
-import UtilityPointChart from "./UtilityPointChart";
-import UtilityLineChart from "./UtilityLineChart";
+import ChartTreeCutting from "./ChartTreeCutting";
+import ChartTreeCompensation from "./ChartTreeCompensation";
+import ChartViaduct from "./ChartViaduct";
+import ChartUtilityPoint from "./ChartUtilityPoint";
+import ChartUtilityLine from "./ChartUtilityLine";
 
-function MainChart() {
+function ChartMain() {
   const [panelWidth, setPanelWidth] = useState<string>("40%");
   const [panelHeader, setPanelHeader] = useState<string>("Chart");
 
@@ -85,34 +85,34 @@ function MainChart() {
 
           {/* CalciteTab: Lot */}
           <calcite-tab>
-            <LotChart />
+            <ChartLot />
           </calcite-tab>
 
           {/* CalciteTab: Structure */}
           <calcite-tab>
-            <StructureChart />
+            <ChartStructure />
           </calcite-tab>
 
           {/* CalciteTab: Non-Land Owner */}
           <calcite-tab>
-            <NloChart />
+            <ChartNlo />
           </calcite-tab>
 
           {/* CalciteTab: Tree Cutting & Compensation */}
           <calcite-tab>
-            <TreeCuttingChart />
-            <TreeCompensationChart />
+            <ChartTreeCutting />
+            <ChartTreeCompensation />
           </calcite-tab>
 
           {/* CalciteTab: Viaduct */}
           <calcite-tab>
-            <UtilityPointChart />
-            <UtilityLineChart />
+            <ChartUtilityPoint />
+            <ChartUtilityLine />
           </calcite-tab>
 
           {/* CalciteTab: Viaduct */}
           <calcite-tab>
-            <ViaductChart />
+            <ChartViaduct />
           </calcite-tab>
         </calcite-tabs>
       </calcite-panel>
@@ -120,4 +120,4 @@ function MainChart() {
   );
 }
 
-export default MainChart;
+export default ChartMain;

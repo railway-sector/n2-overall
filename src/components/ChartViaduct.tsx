@@ -4,68 +4,81 @@ import { useEffect, useRef, useState, use } from "react";
 import { pierAccessLayer, queryc_via, viaductLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import "@esri/calcite-components/dist/components/calcite-panel";
 import "@esri/calcite-components/dist/components/calcite-button";
 import { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartDataColumnSries } from "../ChartGenerator";
+import { chartDataColumnSries } from "../chartGenerator";
 import {
   cpField,
   status_field,
   type_field,
+  updatedDateCategoryNames,
   viaductStatusColorForChart,
   viaStatusArray,
   viatypes,
 } from "../uniqueValues";
-import { chartRendererColumn } from "../ChartRenderer";
-import { queryDefinitionExpression } from "../Query";
-
-// Dispose function
-function maybeDisposeRoot(divId: any) {
-  am5.array.each(am5.registry.rootElements, function (root) {
-    if (root.dom.id === divId) {
-      root.dispose();
-    }
-  });
-}
+import { chartRendererColumn } from "../chartRenderer";
+import { queryDefinitionExpression } from "../queryDefinition";
+import { legendSetter, rootSetter } from "../chartSetter";
+import { dateDisplayKeys } from "../interfaceKeys";
+import { useQuery } from "@tanstack/react-query";
+import type { DisplayDates, ChartResponse } from "../interfaceKeys";
+import { dateUpdate } from "../query";
 
 // Draw chart
-const ViaductChart = () => {
-  const { contractpackages, updateChartPanelwidth, chartPanelwidth } =
-    use(MyContext);
+const ChartViaduct = () => {
+  const { cpackage } = use(MyContext);
 
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const legendRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const [chartData, setChartData] = useState([]);
-  const [progress, setProgress] = useState<any>();
   const chartID = "viaduct-bar";
 
-  useEffect(() => {
-    queryc_via.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
+  // --- 0. As of date
+  const { data: dates } = useQuery<DisplayDates | any>({
+    queryKey: [dateDisplayKeys.selected, updatedDateCategoryNames[5]],
+    queryFn: () => dateUpdate(updatedDateCategoryNames[5]),
+    select: (response) => {
+      return {
+        asOfDate: response[0][0],
+        daysPass: response[0][1],
+      };
+    },
+    staleTime: Infinity,
+  });
 
-    queryDefinitionExpression({
-      queryExpression: queryc_via.queryExpression(),
-      featureLayer: [pierAccessLayer, viaductLayer],
-    });
+  const { data } = useQuery<ChartResponse | any>({
+    queryKey: [cpackage, status_field, viaductLayer],
+    queryFn: async () => {
+      queryc_via.qValues = [cpackage === "All" ? undefined : cpackage];
 
-    chartDataColumnSries({
-      qChart: queryc_via.queryExpression(),
-      chartCategoryTypes: viatypes,
-      chartCategoryTypeField: type_field,
-      layer: viaductLayer,
-      statusstate: [1, 2, 4],
-      statusField: status_field,
-      layerName: "viaduct",
-    }).then((result: any) => {
-      setChartData(result[0]);
-      setProgress(result[3]);
-    });
-  }, [contractpackages]);
+      queryDefinitionExpression({
+        queryExpression: queryc_via.queryExpression(),
+        featureLayer: [pierAccessLayer, viaductLayer],
+      });
+
+      //--- chart data
+      const chartData = await chartDataColumnSries({
+        qChart: queryc_via.queryExpression(),
+        chartCategoryTypes: viatypes,
+        chartCategoryTypeField: type_field,
+        layer: viaductLayer,
+        statusstate: [1, 2, 4],
+        statusField: status_field,
+        layerName: "viaduct",
+      });
+
+      return {
+        chartData: chartData[0] || [],
+        perc_comp: chartData[3] || 0,
+      };
+    },
+    staleTime: Infinity,
+  });
+  const chartData = data?.chartData || [];
+  const perc_comp = data?.perc_comp || 0;
 
   // Define parameters
   const marginTop = 0;
@@ -90,23 +103,12 @@ const ViaductChart = () => {
   const new_chartIconSize = chartPanelwidth * 0.07;
   const new_axisFontSize = chartPanelwidth * 0.036;
   const new_imageSize = chartPanelwidth * 0.035;
+  const new_asofDateSize = chartPanelwidth * 0.032;
   // const new_resetfiler_buttonSize = chartPanelwidth * 0.05;
 
   // Utility Chart
   useEffect(() => {
-    maybeDisposeRoot(chartID);
-
-    const root = am5.Root.new(chartID);
-    root.container.children.clear();
-    root._logo?.dispose();
-
-    // Set themesf
-    // https://www.amcharts.com/docs/v5/concepts/themes/
-    root.setThemes([
-      am5themes_Animated.new(root),
-      am5themes_Responsive.new(root),
-    ]);
-
+    const root = rootSetter({ chartID: chartID });
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
@@ -126,13 +128,13 @@ const ViaductChart = () => {
     );
     chartRef.current = chart;
 
-    const legend = chart.children.push(
-      am5.Legend.new(root, {
-        marginTop: 15,
-        scale: 0.9,
-        layout: root.horizontalLayout,
-      }),
-    );
+    const legend = legendSetter({
+      chart: chart,
+      root: root,
+      marginTop: 15,
+      scale: 0.9,
+      layout: root.horizontalLayout,
+    });
     legendRef.current = legend;
 
     chartRendererColumn({
@@ -140,7 +142,7 @@ const ViaductChart = () => {
       chart: chart,
       data: chartData,
       layers: [viaductLayer],
-      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Value: cpackage === "All" ? undefined : cpackage,
       q1Field: cpField,
       chartCategoryTypes: viatypes,
       chartCategoryTypeField: type_field,
@@ -157,7 +159,7 @@ const ViaductChart = () => {
       chartIconPositionX: chartIconPositionX,
       chartPaddingRightIconLabel: chartPaddingRightIconLabel,
       legend: legend,
-      updateChartPanelwidth: updateChartPanelwidth,
+      updateChartPanelwidth: setChartPanelwidth,
     });
     chart.appear(1000, 100);
 
@@ -207,22 +209,32 @@ const ViaductChart = () => {
               margin: "auto",
             }}
           >
-            {progress} %
+            {perc_comp} %
           </dd>
         </dl>
       </div>
       <div
+        style={{
+          color: dates?.daysPass === true ? "red" : "gray",
+          fontSize: `${new_asofDateSize}px`,
+          float: "right",
+          marginRight: "15px",
+        }}
+      >
+        {!dates?.asOfDate ? "" : "As of " + dates?.asOfDate}
+      </div>
+      <div
         id={chartID}
         style={{
-          height: "65vh",
+          height: "67vh",
           color: "white",
           marginRight: "13px",
           marginLeft: "13px",
-          marginTop: "10px",
+          marginTop: "20px",
         }}
       ></div>
     </>
   );
 };
 
-export default ViaductChart;
+export default ChartViaduct;

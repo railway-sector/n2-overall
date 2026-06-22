@@ -2,8 +2,6 @@ import { useEffect, useRef, useState, use } from "react";
 import { queryc_utill, utilityLineLayer, utilityLineLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import {
   cpField,
   utility_statusField,
@@ -14,57 +12,55 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartDataColumnSries } from "../ChartGenerator";
-import { chartRendererColumn } from "../ChartRenderer";
-import { queryDefinitionExpression } from "../Query";
-
-// Dispose function
-function maybeDisposeRoot(divId: any) {
-  am5.array.each(am5.registry.rootElements, function (root) {
-    if (root.dom.id === divId) {
-      root.dispose();
-    }
-  });
-}
+import { chartDataColumnSries } from "../chartGenerator";
+import { chartRendererColumn } from "../chartRenderer";
+import { queryDefinitionExpression } from "../queryDefinition";
+import { useQuery } from "@tanstack/react-query";
+import type { ChartResponse } from "../interfaceKeys";
+import { legendSetter, rootSetter } from "../chartSetter";
 
 // Draw chart
-const UtilityLineChart = () => {
+const ChartUtilityLine = () => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
-  const {
-    contractpackages,
-    updateChartPanelwidth,
-    chartPanelwidth,
-    updateUtilityLinestats,
-  } = use(MyContext);
+  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
+  const { cpackage, updateUtilityLinestats } = use(MyContext);
 
   const legendRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const [chartData, setChartData] = useState([]);
   const chartID = "utility-line-bar";
 
-  useEffect(() => {
-    queryc_utill.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
+  const { data } = useQuery<ChartResponse | any>({
+    queryKey: [cpackage, utility_statusField, utilityLineLayer],
+    queryFn: async () => {
+      queryc_utill.qValues = [cpackage === "All" ? undefined : cpackage];
 
-    queryDefinitionExpression({
-      queryExpression: queryc_utill.queryExpression(),
-      featureLayer: [utilityLineLayer, utilityLineLayer1],
-    });
+      queryDefinitionExpression({
+        queryExpression: queryc_utill.queryExpression(),
+        featureLayer: [utilityLineLayer, utilityLineLayer1],
+      });
 
-    chartDataColumnSries({
-      qChart: queryc_utill.queryExpression(),
-      chartCategoryTypes: utilityTypeChart,
-      chartCategoryTypeField: utility_typeField,
-      layer: utilityLineLayer,
-      statusstate: [0, 1],
-      statusField: utility_statusField,
-      layerName: "utility",
-    }).then((result: any) => {
-      setChartData(result[0]);
-      updateUtilityLinestats(result);
-    });
-  }, [contractpackages]);
+      //--- chart data
+      const chartData = await chartDataColumnSries({
+        qChart: queryc_utill.queryExpression(),
+        chartCategoryTypes: utilityTypeChart,
+        chartCategoryTypeField: utility_typeField,
+        layer: utilityLineLayer,
+        statusstate: [0, 1],
+        statusField: utility_statusField,
+        layerName: "utility",
+      });
+
+      updateUtilityLinestats(chartData);
+
+      return {
+        chartData: chartData[0] || [],
+        totaln: chartData[1] || 0,
+      };
+    },
+    staleTime: Infinity,
+  });
+  const chartData = data?.chartData || [];
+  // const totaln = data?.totaln || 0;
 
   // Define parameters
   const marginTop = 0;
@@ -89,18 +85,7 @@ const UtilityLineChart = () => {
 
   // Utility point
   useEffect(() => {
-    maybeDisposeRoot(chartID);
-
-    const root = am5.Root.new(chartID);
-    root.container.children.clear();
-    root._logo?.dispose();
-
-    // Set themesf
-    // https://www.amcharts.com/docs/v5/concepts/themes/
-    root.setThemes([
-      am5themes_Animated.new(root),
-      am5themes_Responsive.new(root),
-    ]);
+    const root = rootSetter({ chartID: chartID });
 
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
@@ -121,14 +106,15 @@ const UtilityLineChart = () => {
     );
     chartRef.current = chart;
 
-    const legend = chart.children.push(
-      am5.Legend.new(root, {
-        marginTop: 15,
-        scale: 0.9,
-        layout: root.horizontalLayout,
-        forceHidden: true,
-      }),
-    );
+    const legend = legendSetter({
+      chart: chart,
+      root: root,
+      marginTop: 15,
+      scale: 0.9,
+      layout: root.horizontalLayout,
+      centerX: -30,
+      // forceHidden: true,
+    });
     legendRef.current = legend;
 
     chartRendererColumn({
@@ -136,7 +122,7 @@ const UtilityLineChart = () => {
       chart: chart,
       data: chartData,
       layers: [utilityLineLayer, utilityLineLayer1],
-      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Value: cpackage === "All" ? undefined : cpackage,
       q1Field: cpField,
       chartCategoryTypes: utilityTypeChart,
       chartCategoryTypeField: utility_typeField,
@@ -153,7 +139,7 @@ const UtilityLineChart = () => {
       chartIconPositionX: chartIconPositionX,
       chartPaddingRightIconLabel: chartPaddingRightIconLabel,
       legend: legend,
-      updateChartPanelwidth: updateChartPanelwidth,
+      updateChartPanelwidth: setChartPanelwidth,
     });
 
     return () => {
@@ -183,7 +169,7 @@ const UtilityLineChart = () => {
         id={chartID}
         style={{
           // width: "23vw",
-          height: "29vh",
+          height: "30vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginRight: "15px",
@@ -194,4 +180,4 @@ const UtilityLineChart = () => {
   );
 };
 
-export default UtilityLineChart;
+export default ChartUtilityLine;

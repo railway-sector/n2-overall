@@ -167,7 +167,7 @@ export async function chartDataColumnSries({
       const ongoing = stats[0].attributes[`stats${type.value}${2}`];
 
       total_comp += comp; //
-      total_all += comp + incomp;
+      total_all += comp + incomp + ongoing;
 
       return Object.assign({
         category: chartCategoryTypes[index].category,

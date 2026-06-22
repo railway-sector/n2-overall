@@ -16,7 +16,7 @@ import {
   utilityLineNGCP,
 } from "../layers";
 import HandedOverAreaChart from "./HandedOverAreaChart";
-import { defineActions } from "../Query";
+import { defineActions } from "../query";
 
 function ActionPanel() {
   const [activeWidget, setActiveWidget] = useState(null);

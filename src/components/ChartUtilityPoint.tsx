@@ -2,16 +2,9 @@ import { useEffect, useRef, useState, use } from "react";
 import { queryc_utilp, utilityPointLayer, utilityPointLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import {
-  dateUpdate,
-  queryDefinitionExpression,
-  thousands_separators,
-} from "../Query";
+import { dateUpdate, thousands_separators } from "../query";
 import {
   cpField,
-  cutoff_days,
   primaryLabelColor,
   updatedDateCategoryNames,
   utility_statusField,
@@ -23,74 +16,79 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartDataColumnSries } from "../ChartGenerator";
-import { chartRendererColumn } from "../ChartRenderer";
-
-// Dispose function
-function maybeDisposeRoot(divId: any) {
-  am5.array.each(am5.registry.rootElements, function (root) {
-    if (root.dom.id === divId) {
-      root.dispose();
-    }
-  });
-}
+import { chartDataColumnSries } from "../chartGenerator";
+import { chartRendererColumn } from "../chartRenderer";
+import { queryDefinitionExpression } from "../queryDefinition";
+import { legendSetter, rootSetter } from "../chartSetter";
+import { dateDisplayKeys } from "../interfaceKeys";
+import { useQuery } from "@tanstack/react-query";
+import type { DisplayDates, ChartResponse } from "../interfaceKeys";
 
 // Draw chart
-const UtilityPointChart = () => {
+const ChartUtilityPoint = () => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
-  const {
-    contractpackages,
-    updateChartPanelwidth,
-    chartPanelwidth,
-    utilityLinestats,
-  } = use(MyContext);
+  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
+  const { cpackage, utilityLinestats } = use(MyContext);
 
-  // 0. Updated date
-  const [asOfDate, setAsOfDate] = useState<undefined | any | unknown>(null);
-  const [daysPass, setDaysPass] = useState<boolean>(false);
-  useEffect(() => {
-    dateUpdate(updatedDateCategoryNames[3]).then((response: any) => {
-      setAsOfDate(response[0][0]);
-      setDaysPass(response[0][1] >= cutoff_days ? true : false);
-    });
-  }, []);
+  //--- 0. As of date
+  const { data: dates } = useQuery<DisplayDates | any>({
+    queryKey: [dateDisplayKeys.selected, updatedDateCategoryNames[3]],
+    queryFn: () => dateUpdate(updatedDateCategoryNames[3]),
+    select: (response) => {
+      return {
+        asOfDate: response[0][0],
+        daysPass: response[0][1],
+      };
+    },
+    staleTime: Infinity,
+  });
+
+  const { data } = useQuery<ChartResponse | any>({
+    queryKey: [
+      cpackage,
+      utility_statusField,
+      utilityPointLayer,
+      utilityLinestats,
+    ],
+    queryFn: async () => {
+      queryc_utilp.qValues = [cpackage === "All" ? undefined : cpackage];
+
+      queryDefinitionExpression({
+        queryExpression: queryc_utilp.queryExpression(),
+        featureLayer: [utilityPointLayer, utilityPointLayer1],
+      });
+
+      //--- chart data
+      const chartData = await chartDataColumnSries({
+        qChart: queryc_utilp.queryExpression(),
+        chartCategoryTypes: utilityTypeChart,
+        chartCategoryTypeField: utility_typeField,
+        layer: utilityPointLayer,
+        statusstate: [0, 1],
+        statusField: utility_statusField,
+        layerName: "utility",
+      });
+
+      //--- total completion number
+      const total_comp = utilityLinestats && chartData[1] + utilityLinestats[1];
+      const totaln = utilityLinestats && chartData[2] + utilityLinestats[2];
+      const perc_comp = ((total_comp / totaln) * 100).toFixed(0);
+
+      return {
+        chartData: chartData[0] || [],
+        totalComp: total_comp || 0,
+        perc_comp: perc_comp || 0,
+      };
+    },
+    staleTime: Infinity,
+  });
+  const chartData = data?.chartData || [];
+  const total_comp = data?.totalComp || 0;
+  const perc_comp = data?.perc_comp || 0;
 
   const legendRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const [chartData, setChartData] = useState([]);
   const chartID = "utility-point-bar";
-  const [progress, setProgress] = useState<any>();
-
-  useEffect(() => {
-    queryc_utilp.qValues = [
-      contractpackages === "All" ? undefined : contractpackages,
-    ];
-
-    queryDefinitionExpression({
-      queryExpression: queryc_utilp.queryExpression(),
-      featureLayer: [utilityPointLayer, utilityPointLayer1],
-    });
-
-    chartDataColumnSries({
-      qChart: queryc_utilp.queryExpression(),
-      chartCategoryTypes: utilityTypeChart,
-      chartCategoryTypeField: utility_typeField,
-      layer: utilityPointLayer,
-      statusstate: [0, 1],
-      statusField: utility_statusField,
-      layerName: "utility",
-    }).then((result: any) => {
-      setChartData(result[0]);
-
-      //--- Calculate total completion and percent compeltion
-      const total_comp = utilityLinestats ? result[1] + utilityLinestats[1] : 0;
-      const total_count = utilityLinestats
-        ? result[2] + utilityLinestats[2]
-        : 0;
-      const total_percent_comp = ((total_comp / total_count) * 100).toFixed(0);
-      setProgress([total_comp, total_percent_comp]);
-    });
-  }, [contractpackages, utilityLinestats]);
 
   // Define parameters
   const marginTop = 0;
@@ -119,18 +117,7 @@ const UtilityPointChart = () => {
 
   // Utility point
   useEffect(() => {
-    maybeDisposeRoot(chartID);
-
-    const root = am5.Root.new(chartID);
-    root.container.children.clear();
-    root._logo?.dispose();
-
-    // Set themesf
-    // https://www.amcharts.com/docs/v5/concepts/themes/
-    root.setThemes([
-      am5themes_Animated.new(root),
-      am5themes_Responsive.new(root),
-    ]);
+    const root = rootSetter({ chartID: chartID });
 
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
@@ -151,13 +138,14 @@ const UtilityPointChart = () => {
     );
     chartRef.current = chart;
 
-    const legend = chart.children.push(
-      am5.Legend.new(root, {
-        marginTop: 15,
-        scale: 0.9,
-        layout: root.horizontalLayout,
-      }),
-    );
+    const legend = legendSetter({
+      chart: chart,
+      root: root,
+      marginTop: 15,
+      scale: 0.9,
+      layout: root.horizontalLayout,
+      forceHidden: true,
+    });
     legendRef.current = legend;
 
     chartRendererColumn({
@@ -165,7 +153,7 @@ const UtilityPointChart = () => {
       chart: chart,
       data: chartData,
       layers: [utilityPointLayer, utilityPointLayer1],
-      q1Value: contractpackages === "All" ? undefined : contractpackages,
+      q1Value: cpackage === "All" ? undefined : cpackage,
       q1Field: cpField,
       chartCategoryTypes: utilityTypeChart,
       chartCategoryTypeField: utility_typeField,
@@ -182,7 +170,7 @@ const UtilityPointChart = () => {
       chartIconPositionX: chartIconPositionX,
       chartPaddingRightIconLabel: chartPaddingRightIconLabel,
       legend: legend,
-      updateChartPanelwidth: updateChartPanelwidth,
+      updateChartPanelwidth: setChartPanelwidth,
     });
     return () => {
       root.dispose();
@@ -228,21 +216,21 @@ const UtilityPointChart = () => {
               margin: "auto",
             }}
           >
-            {progress && thousands_separators(progress[1])} %{" "}
+            {perc_comp && thousands_separators(perc_comp)} %{" "}
           </dd>
-          <div>({progress && thousands_separators(progress[0])})</div>
+          <div>({total_comp && thousands_separators(total_comp)})</div>
         </dl>
       </div>
 
       <div
         style={{
-          color: daysPass === true ? "red" : "gray",
+          color: dates?.daysPass === true ? "red" : "gray",
           fontSize: `${new_asofDateSize}px`,
           float: "right",
           marginRight: "15px",
         }}
       >
-        {!asOfDate ? "" : "As of " + asOfDate}
+        {!dates?.asOfDate ? "" : "As of " + dates?.asOfDate}
       </div>
 
       <div
@@ -255,15 +243,16 @@ const UtilityPointChart = () => {
         id={chartID}
         style={{
           // width: "23vw",
-          height: "29vh",
+          height: "30vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginRight: "15px",
           marginLeft: "15px",
+          marginTop: "10px",
         }}
       ></div>
     </>
   );
 };
 
-export default UtilityPointChart;
+export default ChartUtilityPoint;

@@ -2,7 +2,6 @@ import * as am5 from "@amcharts/amcharts5";
 import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/rest/support/Query";
-import { thousands_separators } from "./Query";
 import { querycColumn } from "./layers";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import { type StatusStateType, type StatusTypenamesType } from "./uniqueValues";
@@ -40,103 +39,6 @@ export function responsiveChart(
       to: new_pieSeries_scale,
       duration: 100,
     });
-  });
-}
-
-export function affectedAreaValue(
-  legend: any,
-  affectAreaPie: any,
-  statusLotLabel: any,
-) {
-  legend.valueLabels.template.adapters.add("text", (text: any, target: any) => {
-    const category = target.dataItem?.dataContext?.category;
-    // if (target.dataItem && target.dataItem.get('valuePercentTotal') < 5) {
-    //   return category === 'Paid'
-    //     ? // eslint-disable-next-line no-useless-concat
-    //       "{valuePercentTotal.formatNumber('#.')}% ({value})" + ' (' + testValue + ' sqm)'
-    //     : "{valuePercentTotal.formatNumber('#.')}% ({value})";
-    // }
-    // "[#C9CC3F; fontSize: 12px;][bold]{valuePercentTotal.formatNumber('#.')}% ({value})[/]"
-    if (target.dataItem) {
-      return category === statusLotLabel[0]
-        ? "{value}[/]" +
-            " (" +
-            thousands_separators(
-              affectAreaPie.find((emp: any) => emp.category === category)
-                ?.value,
-            ) +
-            " m2" +
-            ")"
-        : category === statusLotLabel[1]
-          ? "{value}[/]" +
-            " (" +
-            thousands_separators(
-              affectAreaPie?.find((emp: any) => emp.category === category)
-                ?.value,
-            ) +
-            " m2" +
-            ")"
-          : category === statusLotLabel[2]
-            ? "{value}[/]" +
-              " (" +
-              thousands_separators(
-                affectAreaPie?.find((emp: any) => emp.category === category)
-                  ?.value,
-              ) +
-              " m2" +
-              ")"
-            : category === statusLotLabel[3]
-              ? "{value}[/]" +
-                " (" +
-                thousands_separators(
-                  affectAreaPie?.find((emp: any) => emp.category === category)
-                    ?.value,
-                ) +
-                " m2" +
-                ")"
-              : category === statusLotLabel[4]
-                ? "{value}[/]" +
-                  " (" +
-                  thousands_separators(
-                    affectAreaPie?.find((emp: any) => emp.category === category)
-                      ?.value,
-                  ) +
-                  " m2" +
-                  ")"
-                : category === statusLotLabel[5]
-                  ? "{value}[/]" +
-                    " (" +
-                    thousands_separators(
-                      affectAreaPie?.find(
-                        (emp: any) => emp.category === category,
-                      )?.value,
-                    ) +
-                    " m2" +
-                    ")"
-                  : category === statusLotLabel[6]
-                    ? "{value}[/]" +
-                      " (" +
-                      thousands_separators(
-                        affectAreaPie?.find(
-                          (emp: any) => emp.category === category,
-                        )?.value,
-                      ) +
-                      " m2" +
-                      ")"
-                    : category === statusLotLabel[7]
-                      ? "{value}[/]" +
-                        " (" +
-                        thousands_separators(
-                          affectAreaPie?.find(
-                            (emp: any) => emp.category === category,
-                          )?.value,
-                        ) +
-                        " m2" +
-                        ")"
-                      : "{value}";
-    }
-
-    return text;
   });
 }
 
@@ -348,6 +250,167 @@ export function responsiveChartColumn(chart: any, legend: any) {
   });
 }
 
+interface clickSeriesColumnType {
+  layers: any;
+  series: any;
+  q1Value: any;
+  q1Field: any;
+  statusStatename: any;
+  statusArray: any;
+  arcgisScene: any;
+  chartCategoryTypes: any;
+  chartCategoryTypeField: any;
+  statusField: any;
+}
+
+//--- Click event on series
+export function clickSeriesColumn({
+  layers,
+  series,
+  q1Value,
+  q1Field,
+  statusStatename,
+  statusArray,
+  arcgisScene,
+  chartCategoryTypes, // [{category: 'A', value: 3}]
+  chartCategoryTypeField,
+  statusField,
+}: clickSeriesColumnType) {
+  series.columns.template.events.on("click", (ev: any) => {
+    const selected: any = ev.target.dataItem?.dataContext;
+    const categorySelected = chartCategoryTypes.find(
+      (emp: any) => emp.category === selected.category,
+    ).value;
+    querycColumn.qValues = [q1Value];
+    querycColumn.qFields = [q1Field];
+    querycColumn.chartCategory = categorySelected;
+    querycColumn.chartCategoryType = "number";
+    querycColumn.chartCategoryField = chartCategoryTypeField;
+    querycColumn.status = statusArray.find(
+      (item: any) => item.status === statusStatename,
+    ).value;
+    querycColumn.statusField = statusField;
+
+    for (const layer of layers) {
+      highlightFilterLayerView({
+        layer: layer,
+        qExpression: querycColumn.queryExpression(),
+        view: arcgisScene?.view,
+      });
+    }
+  });
+}
+
+//--- Chart series
+interface makeSeriesColumnType {
+  layers: any;
+  root: any;
+  chart: any;
+  data: any;
+  q1Value: any;
+  q1Field: any;
+  chartCategoryTypes: any;
+  chartCategoryTypeField: any;
+  statusTypename: any;
+  statusStatename: any;
+  statusArray: any;
+  statusField: any;
+  xAxis: any;
+  yAxis: any;
+  legend: any;
+  new_axisFontSize: any;
+  seriesStatusColor: any;
+  strokeColor: any;
+  strokeWidth: any;
+  arcgisScene: any;
+}
+
+export function makeSeriesColumn({
+  layers,
+  root,
+  chart,
+  data,
+  q1Value,
+  q1Field,
+  chartCategoryTypes,
+  chartCategoryTypeField,
+  statusTypename,
+  statusStatename,
+  statusArray,
+  statusField,
+  xAxis,
+  yAxis,
+  legend,
+  new_axisFontSize,
+  seriesStatusColor,
+  strokeColor,
+  strokeWidth,
+  arcgisScene,
+}: makeSeriesColumnType) {
+  const series = chart.series.push(
+    am5xy.ColumnSeries.new(root, {
+      name: statusTypename,
+      stacked: true,
+      xAxis: xAxis,
+      yAxis: yAxis,
+      baseAxis: yAxis,
+      valueXField: statusStatename,
+      valueXShow: "valueXTotalPercent",
+      categoryYField: "category",
+      fill:
+        statusStatename === "incomp"
+          ? am5.color(seriesStatusColor[0])
+          : statusStatename === "comp"
+            ? am5.color(seriesStatusColor[3])
+            : am5.color(seriesStatusColor[1]),
+      stroke: am5.color(strokeColor),
+    }),
+  );
+
+  series.columns.template.setAll({
+    fillOpacity: statusStatename === "comp" ? 1 : 0.5,
+    tooltipText: "{name}: {valueX}", // "{categoryY}: {valueX}",
+    tooltipY: am5.percent(90),
+    strokeWidth: strokeWidth,
+  });
+  series.data.setAll(data);
+
+  series.appear();
+
+  series.bullets.push(() => {
+    return am5.Bullet.new(root, {
+      sprite: am5.Label.new(root, {
+        text:
+          statusStatename === "incomp"
+            ? ""
+            : "{valueXTotalPercent.formatNumber('#.')}%", //"{valueX}",
+        fill: root.interfaceColors.get("alternativeText"),
+        opacity: statusStatename === "incomp" ? 0 : 1,
+        fontSize: new_axisFontSize,
+        centerY: am5.p50,
+        centerX: am5.p50,
+        populateText: true,
+      }),
+    });
+  });
+
+  // Click series
+  clickSeriesColumn({
+    layers: layers,
+    series: series,
+    q1Value: q1Value,
+    q1Field: q1Field,
+    statusStatename: statusStatename,
+    statusArray: statusArray,
+    arcgisScene: arcgisScene,
+    chartCategoryTypes: chartCategoryTypes,
+    chartCategoryTypeField: chartCategoryTypeField,
+    statusField: statusField,
+  });
+
+  legend.data.push(series);
+}
+
 interface chartColumnType {
   layers: any;
   root: any;
@@ -496,165 +559,4 @@ export function chartRendererColumn({
         arcgisScene: arcgisScene,
       });
     });
-}
-
-//--- Chart series
-interface makeSeriesColumnType {
-  layers: any;
-  root: any;
-  chart: any;
-  data: any;
-  q1Value: any;
-  q1Field: any;
-  chartCategoryTypes: any;
-  chartCategoryTypeField: any;
-  statusTypename: any;
-  statusStatename: any;
-  statusArray: any;
-  statusField: any;
-  xAxis: any;
-  yAxis: any;
-  legend: any;
-  new_axisFontSize: any;
-  seriesStatusColor: any;
-  strokeColor: any;
-  strokeWidth: any;
-  arcgisScene: any;
-}
-
-export function makeSeriesColumn({
-  layers,
-  root,
-  chart,
-  data,
-  q1Value,
-  q1Field,
-  chartCategoryTypes,
-  chartCategoryTypeField,
-  statusTypename,
-  statusStatename,
-  statusArray,
-  statusField,
-  xAxis,
-  yAxis,
-  legend,
-  new_axisFontSize,
-  seriesStatusColor,
-  strokeColor,
-  strokeWidth,
-  arcgisScene,
-}: makeSeriesColumnType) {
-  const series = chart.series.push(
-    am5xy.ColumnSeries.new(root, {
-      name: statusTypename,
-      stacked: true,
-      xAxis: xAxis,
-      yAxis: yAxis,
-      baseAxis: yAxis,
-      valueXField: statusStatename,
-      valueXShow: "valueXTotalPercent",
-      categoryYField: "category",
-      fill:
-        statusStatename === "incomp"
-          ? am5.color(seriesStatusColor[0])
-          : statusStatename === "comp"
-            ? am5.color(seriesStatusColor[3])
-            : am5.color(seriesStatusColor[1]),
-      stroke: am5.color(strokeColor),
-    }),
-  );
-
-  series.columns.template.setAll({
-    fillOpacity: statusStatename === "comp" ? 1 : 0.5,
-    tooltipText: "{name}: {valueX}", // "{categoryY}: {valueX}",
-    tooltipY: am5.percent(90),
-    strokeWidth: strokeWidth,
-  });
-  series.data.setAll(data);
-
-  series.appear();
-
-  series.bullets.push(() => {
-    return am5.Bullet.new(root, {
-      sprite: am5.Label.new(root, {
-        text:
-          statusStatename === "incomp"
-            ? ""
-            : "{valueXTotalPercent.formatNumber('#.')}%", //"{valueX}",
-        fill: root.interfaceColors.get("alternativeText"),
-        opacity: statusStatename === "incomp" ? 0 : 1,
-        fontSize: new_axisFontSize,
-        centerY: am5.p50,
-        centerX: am5.p50,
-        populateText: true,
-      }),
-    });
-  });
-
-  // Click series
-  clickSeriesColumn({
-    layers: layers,
-    series: series,
-    q1Value: q1Value,
-    q1Field: q1Field,
-    statusStatename: statusStatename,
-    statusArray: statusArray,
-    arcgisScene: arcgisScene,
-    chartCategoryTypes: chartCategoryTypes,
-    chartCategoryTypeField: chartCategoryTypeField,
-    statusField: statusField,
-  });
-
-  legend.data.push(series);
-}
-
-interface clickSeriesColumnType {
-  layers: any;
-  series: any;
-  q1Value: any;
-  q1Field: any;
-  statusStatename: any;
-  statusArray: any;
-  arcgisScene: any;
-  chartCategoryTypes: any;
-  chartCategoryTypeField: any;
-  statusField: any;
-}
-
-//--- Click event on series
-export function clickSeriesColumn({
-  layers,
-  series,
-  q1Value,
-  q1Field,
-  statusStatename,
-  statusArray,
-  arcgisScene,
-  chartCategoryTypes, // [{category: 'A', value: 3}]
-  chartCategoryTypeField,
-  statusField,
-}: clickSeriesColumnType) {
-  series.columns.template.events.on("click", (ev: any) => {
-    const selected: any = ev.target.dataItem?.dataContext;
-    const categorySelected = chartCategoryTypes.find(
-      (emp: any) => emp.category === selected.category,
-    ).value;
-    querycColumn.qValues = [q1Value];
-    querycColumn.qFields = [q1Field];
-    querycColumn.chartCategory = categorySelected;
-    querycColumn.chartCategoryType = "number";
-    querycColumn.chartCategoryField = chartCategoryTypeField;
-    querycColumn.status = statusArray.find(
-      (item: any) => item.status === statusStatename,
-    ).value;
-    querycColumn.statusField = statusField;
-
-    for (const layer of layers) {
-      highlightFilterLayerView({
-        layer: layer,
-        qExpression: querycColumn.queryExpression(),
-        view: arcgisScene?.view,
-      });
-    }
-  });
 }

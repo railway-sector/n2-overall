@@ -6,9 +6,12 @@ import { MyContext } from "./contexts/MyContext";
 import MapDisplay from "./components/MapDisplay";
 import ActionPanel from "./components/ActionPanel";
 import Header from "./components/Header";
-import MainChart from "./components/MainChart";
-import { contractPackage, superurgent_items } from "./uniqueValues";
+import ChartMain from "./components/ChartMain";
+import { contractPackage, urgent_switch } from "./uniqueValues";
 import UndergroundSwitch from "./components/UndergroundSwitch";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 export function App(): React.JSX.Element {
   const [loggedInState, setLoggedInState] = useState<boolean>(false);
@@ -42,13 +45,9 @@ export function App(): React.JSX.Element {
     loginAndLoadPortal();
   }, []);
 
-  const [contractpackages, setContractpackages] = useState<any>(
-    contractPackage[0],
-  );
+  const [cpackage, setCpackage] = useState<any>(contractPackage[0]);
   const [statusdatefield, setStatusdatefield] = useState<any>();
-  const [superurgenttype, setSuperurgenttype] = useState<any>(
-    superurgent_items[0],
-  );
+  const [superurgenttype, setSuperurgenttype] = useState<any>(urgent_switch[0]);
   const [datefields, setDatefields] = useState<any>();
   const [timesliderstate, setTimesliderstate] = useState<boolean>(false);
   const [asofdate, setAsofdate] = useState<any>();
@@ -60,8 +59,8 @@ export function App(): React.JSX.Element {
   const [newHandedOverfield, setNewHandedOverfield] = useState<any>();
   const [utilityLinestats, setUtilityLinestats] = useState<any>();
 
-  const updateContractPackage = (newContractpackage: any) => {
-    setContractpackages(newContractpackage);
+  const updateCpackage = (newContractpackage: any) => {
+    setCpackage(newContractpackage);
   };
 
   const updateStatusdatefield = (newStatusfield: any) => {
@@ -125,7 +124,7 @@ export function App(): React.JSX.Element {
         >
           <MyContext
             value={{
-              contractpackages,
+              cpackage,
               statusdatefield,
               superurgenttype,
               datefields,
@@ -138,7 +137,7 @@ export function App(): React.JSX.Element {
               chartPanelwidth,
               newHandedOverfield,
               utilityLinestats,
-              updateContractPackage,
+              updateCpackage,
               updateStatusdatefield,
               updateSuperurgenttype,
               updateDatefields,
@@ -153,12 +152,14 @@ export function App(): React.JSX.Element {
               updateUtilityLinestats,
             }}
           >
-            <UndergroundSwitch />
-            <MainChart />
-            <ActionPanel />
-            <MapDisplay />
+            <QueryClientProvider client={queryClient}>
+              <UndergroundSwitch />
+              <ChartMain />
+              <ActionPanel />
+              <MapDisplay />
 
-            <Header />
+              <Header />
+            </QueryClientProvider>
           </MyContext>
         </calcite-shell>
       )}

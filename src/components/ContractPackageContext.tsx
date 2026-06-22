@@ -6,8 +6,8 @@ import { MyContext } from "../contexts/MyContext";
 import { contractPackage } from "../uniqueValues";
 
 export default function StationSegmentedList() {
-  const { updateContractPackage } = use(MyContext);
-  const [contractPackageSelected, setContractPackageSelected] = useState<any>(
+  const { updateCpackage } = use(MyContext);
+  const [cpackageSelected, setCpackageSelected] = useState<any>(
     contractPackage[0],
   );
 
@@ -15,8 +15,8 @@ export default function StationSegmentedList() {
     <>
       <calcite-segmented-control
         oncalciteSegmentedControlChange={(event: any) => {
-          setContractPackageSelected(event.target.selectedItem.id);
-          updateContractPackage(event.target.selectedItem.id);
+          setCpackageSelected(event.target.selectedItem.id);
+          updateCpackage(event.target.selectedItem.id);
         }}
         scale="m"
         width="full"
@@ -27,13 +27,11 @@ export default function StationSegmentedList() {
           marginBottom: "auto",
         }}
       >
-        {contractPackageSelected &&
+        {cpackageSelected &&
           contractPackage.map((contractp: any, index: any) => {
             return (
               <calcite-segmented-control-item
-                {...(contractPackageSelected === contractp
-                  ? { checked: true }
-                  : {})}
+                {...(cpackageSelected === contractp ? { checked: true } : {})}
                 key={index}
                 value={contractp}
                 id={contractp}

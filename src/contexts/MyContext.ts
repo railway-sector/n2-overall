@@ -1,7 +1,7 @@
 import { createContext } from "react";
 
 type MyDropdownContextType = {
-  contractpackages: any;
+  cpackage: any;
   statusdatefield: any;
   superurgenttype: any;
   datefields: any;
@@ -14,7 +14,7 @@ type MyDropdownContextType = {
   chartPanelwidth: any;
   utilityLinestats: any;
   newHandedOverfield: any;
-  updateContractPackage: any;
+  updateCpackage: any;
   updateStatusdatefield: any;
   updateSuperurgenttype: any;
   updateDatefields: any;
@@ -30,7 +30,7 @@ type MyDropdownContextType = {
 };
 
 const initialState = {
-  contractpackages: undefined,
+  cpackage: undefined,
   statusdatefield: undefined,
   superurgenttype: undefined,
   datefields: undefined,
@@ -43,7 +43,7 @@ const initialState = {
   chartPanelwidth: undefined,
   newHandedOverfield: undefined,
   utilityLinestats: undefined,
-  updateContractPackage: undefined,
+  updateCpackage: undefined,
   updateStatusdatefield: undefined,
   updateSuperurgenttype: undefined,
   updateDatefields: undefined,

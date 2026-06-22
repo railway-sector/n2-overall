@@ -128,7 +128,7 @@ export const cutoff_days = 30;
 //---------------------------------------------//
 export const superUrgentField = "Urgent";
 export const querySuperUrgent = `${superUrgentField} = 0`;
-export const superurgent_items = ["OFF", "ON"];
+export const urgent_switch = ["OFF", "ON"];
 
 export const lotHandOverDateField = "HandOverDate";
 export const lotTargetActualField = "TargetActual";
