@@ -78,6 +78,10 @@ export const highlightFilterLayerView = async ({
     });
     qChart.qExpression = undefined;
     qChart.q2Expression = undefined;
+    qChart.status = undefined;
+    qChart.statusField = undefined;
+    qChart.chartCategory = undefined;
+    qChart.chartCategoryField = undefined;
     highlightSelect && highlightSelect.remove();
   });
 };

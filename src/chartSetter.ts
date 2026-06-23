@@ -29,10 +29,18 @@ export function rootSetter({ chartID }: rootSetterType) {
   return root;
 }
 
-export function chartSetter(root: any) {
+interface chartSetterType {
+  root: any;
+  y?: number;
+  centerY?: number;
+}
+
+export function chartSetter({ root, y, centerY }: chartSetterType) {
   const chart = root.container.children.push(
     am5percent.PieChart.new(root, {
       layout: root.verticalLayout,
+      y: y ? y : 0,
+      centerY: centerY ? centerY : 0,
     }),
   );
 

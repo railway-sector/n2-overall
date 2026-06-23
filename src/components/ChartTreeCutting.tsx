@@ -89,7 +89,7 @@ const ChartTreeCutting = () => {
 
   useEffect(() => {
     const root = rootSetter({ chartID: chartID });
-    const chart = chartSetter(root);
+    const chart = chartSetter({ root: root });
     chartRef.current = chart;
 
     const pieSeries = seriesSetter({
