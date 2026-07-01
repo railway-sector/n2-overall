@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState, use } from "react";
-import { queryc_utilp, utilityPointLayer, utilityPointLayer1 } from "../layers";
+import {
+  chartstack_utilp,
+  queryc_utilp,
+  utilityPointLayer,
+  utilityPointLayer1,
+} from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import { dateUpdate, thousands_separators } from "../query";
+import {
+  dateUpdate,
+  stackColumnsChartData,
+  thousands_separators,
+} from "../query";
 import {
   primaryLabelColor,
   updatedDateCategoryNames,
@@ -15,7 +24,6 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartDataColumnSries } from "../chartGenerator";
 import { chartRendererColumn } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { legendSetter, rootSetter } from "../chartSetter";
@@ -58,19 +66,19 @@ const ChartUtilityPoint = () => {
       });
 
       //--- chart data
-      const chartData = await chartDataColumnSries({
-        qChart: queryc_utilp.queryExpression(),
-        chartCategoryTypes: utilityTypeChart,
-        chartCategoryTypeField: utility_typeField,
-        layer: utilityPointLayer,
-        statusstate: [0, 1],
+      const chartData = await stackColumnsChartData({
+        stackchart: chartstack_utilp,
+        qChart: queryc_utilp,
+        categoryTypes: utilityTypeChart,
+        categoryTypeField: utility_typeField,
+        layers: [utilityPointLayer],
         statusField: utility_statusField,
-        layerName: "utility",
+        statusState: [0, 2, 3, 1],
       });
 
       //--- total completion number
-      const total_comp = utilityLinestats && chartData[1] + utilityLinestats[1];
-      const totaln = utilityLinestats && chartData[2] + utilityLinestats[2];
+      const total_comp = utilityLinestats && chartData[3] + utilityLinestats[3];
+      const totaln = utilityLinestats && chartData[1] + utilityLinestats[1];
       const perc_comp = ((total_comp / totaln) * 100).toFixed(0);
 
       return {

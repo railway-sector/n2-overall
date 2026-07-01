@@ -1,13 +1,15 @@
 import { useEffect, useRef, use, useState } from "react";
-import { queryc_treecomp, treeCompensationLayer } from "../layers";
 import {
-  colorsCompen,
+  piechart_tcomp,
+  queryc_treecomp,
+  treeCompensationLayer,
+} from "../layers";
+import {
   statusTreeCompensationChart,
   treeCompen_status_field,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { pieChartStatusData } from "../chartGenerator";
 import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +21,7 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
+import { pieChartData } from "../query";
 
 const ChartTreeCompensation = () => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
@@ -36,11 +39,11 @@ const ChartTreeCompensation = () => {
       });
 
       //--- chart data
-      const chartData = await pieChartStatusData({
-        qChart: queryc_treecomp.queryExpression(),
+      const chartData = await pieChartData({
+        piechart: piechart_tcomp,
+        qChart: queryc_treecomp,
         layer: treeCompensationLayer,
         statusList: statusTreeCompensationChart,
-        statusColor: colorsCompen,
         statusField: treeCompen_status_field,
         statisticField: treeCompen_status_field,
         statisticType: "count",

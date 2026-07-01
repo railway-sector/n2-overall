@@ -13,7 +13,19 @@ import Collection from "@arcgis/core/core/Collection";
 import ActionButton from "@arcgis/core/support/actions/ActionButton";
 import { ngcp_tagged_structureLayer } from "./layers";
 import type { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
+import type { statisticsType } from "./uniqueValues";
+import Query from "@arcgis/core/rest/support/Query";
+
 const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+
+//---------------------------------------------------------//
+//                 Add Layers to Map                      //
+//---------------------------------------------------------//
+export function addLayersToMap(map: any, layersList: any[]) {
+  layersList.forEach((layer: any) => {
+    map.add(layer);
+  });
+}
 
 //--------------------------------//
 //    As of Date function         //
@@ -32,31 +44,120 @@ export function lastDateOfMonth(date: Date) {
 // Updat date
 export async function dateUpdate(category: any) {
   const query = dateTable.createQuery();
-  const queryExpression =
-    "project = 'N2'" + " AND " + "category = '" + category + "'";
-  query.where = queryExpression; // "project = 'N2'" + ' AND ' + "category = 'Land Acquisition'";
+  query.where = `project = 'N2' AND category = '${category}'`; // "project = 'N2'" + ' AND ' + "category = 'Land Acquisition'";
 
-  return dateTable.queryFeatures(query).then((response: any) => {
-    const stats = response.features;
-    const dates = stats.map((result: any) => {
-      // get today and date recorded in the table
-      const today = new Date();
-      const date = new Date(result.attributes.date);
+  const response = await dateTable.queryFeatures(query);
+  const dates = response.features.map((result: any) => {
+    // get today and date recorded in the table
+    const today = new Date();
+    const date = new Date(result.attributes.date);
 
-      // Calculate the number of days passed since the last update
-      const time_passed = today.getTime() - date.getTime();
-      const days_passed = Math.round(time_passed / (1000 * 3600 * 24));
+    // Calculate the number of days passed since the last update
+    const time_passed = today.getTime() - date.getTime();
+    const days_passed = Math.round(time_passed / (1000 * 3600 * 24));
 
-      const year = date.getFullYear();
-      const month = date.toLocaleString("en-US", {
-        month: "long",
-      });
-      const day = date.getDate();
-      const as_of_date = year < 1990 ? "" : `${month} ${day}, ${year}`;
-      return [as_of_date, days_passed, date];
+    const year = date.getFullYear();
+    const month = date.toLocaleString("en-US", {
+      month: "long",
     });
-    return dates;
+    const day = date.getDate();
+    const as_of_date = year < 1990 ? "" : `${month} ${day}, ${year}`;
+    return [as_of_date, days_passed, date];
   });
+  return dates;
+}
+
+//---------------------------------------------//
+//               Pie chart                     //
+//---------------------------------------------//
+// 'piechart' = constant declared from class ChartPieSeries in layers.ts
+interface pieChartDataType {
+  piechart: any;
+  qChart: any;
+  layer: any;
+  statusList: any;
+  statusField: any;
+  statisticField: any;
+  statisticType: "sum" | "count";
+}
+export async function pieChartData({
+  piechart,
+  qChart,
+  layer,
+  statusList,
+  statusField,
+  statisticField,
+  statisticType,
+}: pieChartDataType) {
+  piechart.qChart = qChart.queryExpression();
+  piechart.layer = layer;
+  piechart.statusList = statusList;
+  piechart.statusField = statusField;
+  piechart.statisticField = statisticField;
+  piechart.statisticType = statisticType;
+
+  return await piechart.chartDataPieSeries();
+}
+
+interface fieldStatisticType {
+  qChart: any;
+  layer: any;
+  statisticField: any;
+  statisticType: statisticsType;
+}
+
+export async function fieldStatistic({
+  qChart,
+  layer,
+  statisticField,
+  statisticType,
+}: fieldStatisticType) {
+  const statsCollect = new StatisticDefinition({
+    onStatisticField: statisticField,
+    outStatisticFieldName: "statsCollect",
+    statisticType: statisticType,
+  });
+
+  //--- Query
+  const query = new Query();
+  query.outStatistics = [statsCollect];
+  query.where = qChart;
+
+  return layer?.queryFeatures(query).then((response: any) => {
+    return response.features[0].attributes.statsCollect;
+  });
+}
+
+//---------------------------------------------//
+//               Stack Columns                 //
+//---------------------------------------------//
+interface stackColumnsDataType {
+  stackchart: any;
+  qChart: any;
+  categoryTypes: any;
+  categoryTypeField: any;
+  layers: any;
+  statusField: any;
+  statusState: any;
+}
+
+export async function stackColumnsChartData({
+  stackchart,
+  qChart,
+  categoryTypes,
+  categoryTypeField,
+  layers,
+  statusField,
+  statusState,
+}: stackColumnsDataType) {
+  stackchart.qChart = qChart.queryExpression();
+  stackchart.categoryTypes = categoryTypes;
+  stackchart.categoryTypeField = categoryTypeField;
+  stackchart.layers = layers;
+  stackchart.statusField = statusField;
+  stackchart.statusState = statusState;
+
+  return await stackchart.chartDataStackColumns();
 }
 
 //---------------------------------------------//

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, use } from "react";
-import { dateUpdate, thousands_separators } from "../query";
+import { dateUpdate, pieChartData, thousands_separators } from "../query";
 import "../index.css";
 import {
   primaryLabelColor,
@@ -7,11 +7,14 @@ import {
   structureStatusField,
   updatedDateCategoryNames,
   valueLabelColor,
-  structureStatusColorHex,
 } from "../uniqueValues";
 import { MyContext } from "../contexts/MyContext";
-import { occupancyLayer, queryc_struc, structureLayer } from "../layers";
-import { pieChartStatusData } from "../chartGenerator";
+import {
+  occupancyLayer,
+  piechart_struc,
+  queryc_struc,
+  structureLayer,
+} from "../layers";
 import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { dateDisplayKeys } from "../interfaceKeys";
@@ -20,7 +23,6 @@ import type { DisplayDates, ChartResponse } from "../interfaceKeys";
 import {
   chartSetter,
   legendSetter,
-  // maybeDisposeRoot,
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
@@ -55,11 +57,11 @@ const ChartStructure = () => {
       });
 
       //--- chart data
-      const chartData = await pieChartStatusData({
-        qChart: queryc_struc.queryExpression(),
+      const chartData = await pieChartData({
+        piechart: piechart_struc,
+        qChart: queryc_struc,
         layer: structureLayer,
         statusList: structureStatusQuery,
-        statusColor: structureStatusColorHex,
         statusField: structureStatusField,
         statisticField: structureStatusField,
         statisticType: "count",

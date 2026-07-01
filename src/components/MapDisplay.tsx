@@ -20,13 +20,14 @@ import {
   ngcp2_groupLayer,
   nloLoOccupancyGroupLayer,
   alignmentGroupLayer,
-  lotLayer,
   pierHeadColumnLayer,
   meralco_tss10_groupLayer,
+  sources,
   // maintenanceRoadLayer,
 } from "../layers";
 import type { ArcgisSearch } from "@arcgis/map-components/components/arcgis-search";
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils";
+import { addLayersToMap } from "../query";
 
 export default function MapDisplay() {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
@@ -44,51 +45,20 @@ export default function MapDisplay() {
   );
 
   arcgisScene?.viewOnReady(() => {
-    arcgisScene?.map?.add(buildingLayer);
-    arcgisScene?.map?.add(viaductLayer);
-    arcgisScene?.map?.add(pierAccessLayer);
-    arcgisScene?.map?.add(utilityGroupLayer);
-    arcgisScene?.map?.add(treeGroupLayer);
-    arcgisScene?.map?.add(lotGroupLayer);
-    arcgisScene?.map?.add(ngcp2_groupLayer);
-    arcgisScene?.map?.add(structureLayer);
-    arcgisScene?.map?.add(nloLoOccupancyGroupLayer);
-    arcgisScene?.map?.add(meralco_tss10_groupLayer);
-    arcgisScene?.map?.add(alignmentGroupLayer);
-    arcgisScene?.map?.add(handedOverLotLayer);
-    // arcgisScene?.map?.add(maintenanceRoadLayer);
-
-    // Search components
-    const sources: any = [
-      {
-        layer: lotLayer,
-        searchFields: ["LotID"],
-        displayField: "LotID",
-        exactMatch: false,
-        outFields: ["LotID"],
-        name: "Lot ID",
-        placeholder: "example: 10083",
-      },
-      {
-        layer: structureLayer,
-        searchFields: ["StrucID"],
-        displayField: "StrucID",
-        exactMatch: false,
-        outFields: ["StrucID"],
-        name: "Structure ID",
-        placeholder: "example: NSRP-01-02-ML007",
-      },
-      {
-        layer: pierAccessLayer,
-        searchFields: ["PierNumber"],
-        displayField: "PierNumber",
-        exactMatch: false,
-        outFields: ["PierNumber"],
-        name: "Pier No",
-        zoomScale: 1000,
-        placeholder: "example: P-288",
-      },
-    ];
+    addLayersToMap(arcgisScene?.map, [
+      buildingLayer,
+      viaductLayer,
+      pierAccessLayer,
+      utilityGroupLayer,
+      treeGroupLayer,
+      lotGroupLayer,
+      ngcp2_groupLayer,
+      structureLayer,
+      nloLoOccupancyGroupLayer,
+      meralco_tss10_groupLayer,
+      alignmentGroupLayer,
+      handedOverLotLayer,
+    ]);
 
     arcgisSearch.allPlaceholder = "LotID, StructureID, Chainage";
     arcgisSearch.includeDefaultSourcesDisabled = true;

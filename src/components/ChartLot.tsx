@@ -4,11 +4,14 @@ import {
   lotLayer,
   queryc_lot2,
   queryc_lot,
+  piechart,
 } from "../layers";
 import {
   dateUpdate,
+  fieldStatistic,
   highlightLot,
   highlightRemove,
+  pieChartData,
   thousands_separators,
   zoomToLayer,
 } from "../query";
@@ -20,7 +23,6 @@ import {
   lotHandedOverAreaField,
   lotHandedOverField,
   lotIdField,
-  lotStatusColor,
   lotStatusField,
   lotStatusQuery,
   primaryLabelColor,
@@ -32,7 +34,6 @@ import {
 import "@arcgis/map-components/dist/components/arcgis-scene";
 import "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { pieChartStatusData, fieldStatistic } from "../chartGenerator";
 import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import {
@@ -80,11 +81,11 @@ const LotChart = () => {
       });
 
       //--- chart data
-      const chartData = await pieChartStatusData({
-        qChart: queryc_lot.queryExpression(),
+      const chartData = await pieChartData({
+        piechart: piechart,
+        qChart: queryc_lot,
         layer: lotLayer,
         statusList: lotStatusQuery,
-        statusColor: lotStatusColor,
         statusField: lotStatusField,
         statisticField: lotStatusField,
         statisticType: "count",

@@ -70,6 +70,89 @@ import {
 } from "./uniqueValues";
 import { labelSymbol3DLine } from "./uniqueValues";
 import QueryExpressionLayers from "query-layers-expression";
+import ChartPieSeries from "chart-pie-series";
+import ChartStackColumns from "chart-stack-column";
+
+export const chartstack_utilp = new ChartStackColumns(
+  undefined, // qChart
+  undefined, // categoryTypes
+  undefined, // categoryTypeField
+  undefined, // layers
+  undefined, // status field
+  undefined, // statusState
+);
+
+export const chartstack_utill = new ChartStackColumns(
+  undefined, // qChart
+  undefined, // categoryTypes
+  undefined, // categoryTypeField
+  undefined, // layers
+  undefined, // status field
+  undefined, // statusState
+);
+
+export const chartstack_via = new ChartStackColumns(
+  undefined, // qChart
+  undefined, // categoryTypes
+  undefined, // categoryTypeField
+  undefined, // layers
+  undefined, // status field
+  undefined, // statusState
+);
+
+export const piechart = new ChartPieSeries(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const piechartaa = new ChartPieSeries(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const piechart_struc = new ChartPieSeries(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const piechart_nlo = new ChartPieSeries(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const piechart_tcut = new ChartPieSeries(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+);
+
+export const piechart_tcomp = new ChartPieSeries(
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+);
 
 export const queryc_lot = new QueryExpressionLayers(
   [undefined, undefined],
@@ -2839,3 +2922,35 @@ export const utilityGroupLayer = new GroupLayer({
     utilityLineNGCP,
   ],
 });
+
+// Search components
+export const sources: any = [
+  {
+    layer: lotLayer,
+    searchFields: ["LotID"],
+    displayField: "LotID",
+    exactMatch: false,
+    outFields: ["LotID"],
+    name: "Lot ID",
+    placeholder: "example: 10083",
+  },
+  {
+    layer: structureLayer,
+    searchFields: ["StrucID"],
+    displayField: "StrucID",
+    exactMatch: false,
+    outFields: ["StrucID"],
+    name: "Structure ID",
+    placeholder: "example: NSRP-01-02-ML007",
+  },
+  {
+    layer: pierAccessLayer,
+    searchFields: ["PierNumber"],
+    displayField: "PierNumber",
+    exactMatch: false,
+    outFields: ["PierNumber"],
+    name: "Pier No",
+    zoomScale: 1000,
+    placeholder: "example: P-288",
+  },
+];

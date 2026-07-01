@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, use } from "react";
-import { queryc_treecut, treeCuttingLayer } from "../layers";
-import { thousands_separators, dateUpdate } from "../query";
+import { piechart_tcut, queryc_treecut, treeCuttingLayer } from "../layers";
+import { thousands_separators, dateUpdate, pieChartData } from "../query";
 import {
-  colorsCutting,
   primaryLabelColor,
   statusTreeCuttingChart,
   treeStatus_field,
@@ -11,7 +10,6 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { pieChartStatusData } from "../chartGenerator";
 import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { dateDisplayKeys } from "../interfaceKeys";
@@ -53,11 +51,11 @@ const ChartTreeCutting = () => {
       });
 
       //--- chart data
-      const chartData = await pieChartStatusData({
-        qChart: queryc_treecut.queryExpression(),
+      const chartData = await pieChartData({
+        piechart: piechart_tcut,
+        qChart: queryc_treecut,
         layer: treeCuttingLayer,
         statusList: statusTreeCuttingChart,
-        statusColor: colorsCutting,
         statusField: treeStatus_field,
         statisticField: treeStatus_field,
         statisticType: "count",

@@ -1,14 +1,18 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useEffect, useRef, useState, use } from "react";
-import { pierAccessLayer, queryc_via, viaductLayer } from "../layers";
+import {
+  chartstack_via,
+  pierAccessLayer,
+  queryc_via,
+  viaductLayer,
+} from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import "@esri/calcite-components/dist/components/calcite-panel";
 import "@esri/calcite-components/dist/components/calcite-button";
 import { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartDataColumnSries } from "../chartGenerator";
 import {
   status_field,
   type_field,
@@ -23,7 +27,7 @@ import { legendSetter, rootSetter } from "../chartSetter";
 import { dateDisplayKeys } from "../interfaceKeys";
 import { useQuery } from "@tanstack/react-query";
 import type { DisplayDates, ChartResponse } from "../interfaceKeys";
-import { dateUpdate } from "../query";
+import { dateUpdate, stackColumnsChartData } from "../query";
 
 // Draw chart
 const ChartViaduct = () => {
@@ -59,19 +63,19 @@ const ChartViaduct = () => {
       });
 
       //--- chart data
-      const chartData = await chartDataColumnSries({
-        qChart: queryc_via.queryExpression(),
-        chartCategoryTypes: viatypes,
-        chartCategoryTypeField: type_field,
-        layer: viaductLayer,
-        statusstate: [1, 2, 4],
+      const chartData = await stackColumnsChartData({
+        stackchart: chartstack_via,
+        qChart: queryc_via,
+        categoryTypes: viatypes,
+        categoryTypeField: type_field,
+        layers: [viaductLayer],
         statusField: status_field,
-        layerName: "viaduct",
+        statusState: [1, 2, 3, 4],
       });
 
       return {
         chartData: chartData[0] || [],
-        perc_comp: chartData[3] || 0,
+        perc_comp: chartData[2] || 0,
       };
     },
     staleTime: Infinity,

@@ -1,18 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useRef, useState, useEffect, memo, use } from "react";
-import { dateUpdate, thousands_separators } from "../query";
+import { dateUpdate, pieChartData, thousands_separators } from "../query";
 import {
   nloStatusField,
   primaryLabelColor,
   nloStatusQuery,
   updatedDateCategoryNames,
   valueLabelColor,
-  nloStatusColor,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { nloLayer, queryc_nlo } from "../layers";
-import { pieChartStatusData } from "../chartGenerator";
+import { nloLayer, piechart_nlo, queryc_nlo } from "../layers";
 import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import {
@@ -57,11 +55,11 @@ const ChartNlo = memo(() => {
       });
 
       //--- chart data
-      const chartData = await pieChartStatusData({
-        qChart: queryc_nlo.queryExpression(),
+      const chartData = await pieChartData({
+        piechart: piechart_nlo,
+        qChart: queryc_nlo,
         layer: nloLayer,
         statusList: nloStatusQuery,
-        statusColor: nloStatusColor,
         statusField: nloStatusField,
         statisticField: nloStatusField,
         statisticType: "count",
