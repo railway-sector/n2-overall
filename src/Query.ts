@@ -30,15 +30,12 @@ export function addLayersToMap(map: any, layersList: any[]) {
 //--------------------------------//
 //    As of Date function         //
 //--------------------------------//
-// get last date of month
-export function lastDateOfMonth(date: Date) {
-  const old_date = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  const year = old_date.getFullYear();
-  const month = old_date.getMonth() + 1;
-  const day = old_date.getDate();
-  const final_date = `${year}-${month}-${day}`;
-
-  return final_date;
+export function yearMonthDay(date: Date) {
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+  };
 }
 
 // Updat date
@@ -56,7 +53,7 @@ export async function dateUpdate(category: any) {
     const time_passed = today.getTime() - date.getTime();
     const days_passed = Math.round(time_passed / (1000 * 3600 * 24));
 
-    const year = date.getFullYear();
+    const year = yearMonthDay(date).year;
     const month = date.toLocaleString("en-US", {
       month: "long",
     });
@@ -126,6 +123,51 @@ export async function fieldStatistic({
   return layer?.queryFeatures(query).then((response: any) => {
     return response.features[0].attributes.statsCollect;
   });
+}
+
+//---------------------------------------------//
+//           Lot (handed over area)            //
+//---------------------------------------------//
+interface HandedOverArea {
+  aa_field: any;
+  hoa_field: any;
+  cp_list: any;
+  layer: any;
+}
+export async function handedOverAreaByContractp({
+  aa_field,
+  hoa_field,
+  cp_list,
+  layer,
+}: HandedOverArea) {
+  return await Promise.all(
+    cp_list.map(async (cp: any) => {
+      const aa = new StatisticDefinition({
+        onStatisticField: aa_field,
+        outStatisticFieldName: "aa",
+        statisticType: "sum",
+      });
+
+      const hoa = new StatisticDefinition({
+        onStatisticField: hoa_field,
+        outStatisticFieldName: "hoa",
+        statisticType: "sum",
+      });
+
+      const query = layer.createQuery();
+      query.where = `CP = '${cp}' AND ${cpField} IS NOT NULL`;
+      query.outStatistics = [aa, hoa];
+
+      const response = await layer?.queryFeatures(query);
+      const attributes = response.features[0].attributes;
+      const perc = ((attributes.hoa / attributes.aa) * 100).toFixed(0);
+
+      return {
+        category: cp,
+        value: perc ?? 0,
+      };
+    }),
+  );
 }
 
 //---------------------------------------------//

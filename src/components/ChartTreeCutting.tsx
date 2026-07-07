@@ -10,7 +10,6 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { dateDisplayKeys } from "../interfaceKeys";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +20,7 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
+import ChartPieSeriesRender from "chart-pie-series-render";
 
 const ChartTreeCutting = () => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
@@ -40,7 +40,7 @@ const ChartTreeCutting = () => {
     staleTime: Infinity,
   });
 
-  const { data } = useQuery<ChartResponse | any>({
+  const { data, isLoading } = useQuery<ChartResponse | any>({
     queryKey: [cpackage, treeCuttingLayer, treeStatus_field],
     queryFn: async () => {
       queryc_treecut.qValues = [cpackage === "All" ? undefined : cpackage];
@@ -114,23 +114,25 @@ const ChartTreeCutting = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    chartRenderer({
-      chart: chart,
-      pieSeries: pieSeries,
-      legend: legend,
-      root: root,
-      qChart: queryc_treecut,
-      status_field: treeStatus_field,
-      arcgisScene: arcgisScene,
-      updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      pieSeriesScale: new_pieSeriesScale,
-      pieInnerLabel: "TREES",
-      pieInnerLabelFontSize: new_pieInnerLabelFontSize,
-      pieInnerValueFontSize: new_pieInnerValueFontSize,
-      layer: treeCuttingLayer,
-      statusArray: statusTreeCuttingChart,
-    });
+    const crender = new ChartPieSeriesRender(
+      chart,
+      pieSeries,
+      legend,
+      root,
+      queryc_treecut,
+      undefined,
+      treeStatus_field,
+      arcgisScene?.view,
+      setChartPanelwidth,
+      chartData,
+      new_pieSeriesScale,
+      "TREES",
+      new_pieInnerLabelFontSize,
+      new_pieInnerValueFontSize,
+      treeCuttingLayer,
+      statusTreeCuttingChart,
+    );
+    crender.chartDataRenderer();
 
     return () => {
       root.dispose();
@@ -178,6 +180,7 @@ const ChartTreeCutting = () => {
               fontFamily: "calibri",
               lineHeight: "1.2",
               margin: "auto",
+              opacity: isLoading ? 0 : 1,
             }}
           >
             {thousands_separators(totaln)}
@@ -202,6 +205,7 @@ const ChartTreeCutting = () => {
           height: "35vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
+          opacity: isLoading ? 0 : 1,
         }}
       ></div>
     </>

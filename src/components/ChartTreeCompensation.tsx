@@ -10,7 +10,6 @@ import {
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
@@ -22,13 +21,14 @@ import {
   seriesSetter,
 } from "../chartSetter";
 import { pieChartData } from "../query";
+import ChartPieSeriesRender from "chart-pie-series-render";
 
 const ChartTreeCompensation = () => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [_chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
 
-  const { data } = useQuery<ChartResponse | any>({
+  const { data, isLoading } = useQuery<ChartResponse | any>({
     queryKey: [cpackage, treeCompen_status_field, treeCompensationLayer],
     queryFn: async () => {
       queryc_treecomp.qValues = [cpackage === "All" ? undefined : cpackage];
@@ -98,23 +98,25 @@ const ChartTreeCompensation = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    chartRenderer({
-      chart: chart,
-      pieSeries: pieSeries,
-      legend: legend,
-      root: root,
-      qChart: queryc_treecomp,
-      status_field: treeCompen_status_field,
-      arcgisScene: arcgisScene,
-      updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      pieSeriesScale: new_pieSeriesScale,
-      pieInnerLabel: "TREES",
-      pieInnerLabelFontSize: new_pieInnerLabelFontSize,
-      pieInnerValueFontSize: new_pieInnerValueFontSize,
-      layer: treeCompensationLayer,
-      statusArray: statusTreeCompensationChart,
-    });
+    const crender = new ChartPieSeriesRender(
+      chart,
+      pieSeries,
+      legend,
+      root,
+      queryc_treecomp,
+      undefined,
+      treeCompen_status_field,
+      arcgisScene?.view,
+      setChartPanelwidth,
+      chartData,
+      new_pieSeriesScale,
+      "TREES",
+      new_pieInnerLabelFontSize,
+      new_pieInnerValueFontSize,
+      treeCompensationLayer,
+      statusTreeCompensationChart,
+    );
+    crender.chartDataRenderer();
 
     return () => {
       root.dispose();
@@ -134,6 +136,7 @@ const ChartTreeCompensation = () => {
           height: "34vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
+          opacity: isLoading ? 0 : 1,
         }}
       ></div>
     </>

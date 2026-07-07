@@ -15,7 +15,7 @@ import {
   prowOthersLayer,
   utilityLineNGCP,
 } from "../layers";
-import HandedOverAreaChart from "./HandedOverAreaChart";
+import HandedOverAreaChart from "./ChartHandedOverArea";
 import { defineActions } from "../query";
 
 function ActionPanel() {

@@ -54,6 +54,7 @@ function ChartMain() {
           width: panelWidth,
           overflowY: "auto",
           display: "block", // without adding display, background will not disappear.
+          scrollbarWidth: "none",
         }}
         // oncalcitePanelCollapse={handlePanelCollapse}
         onClick={handlePanelCollapse}

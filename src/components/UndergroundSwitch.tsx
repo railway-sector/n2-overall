@@ -14,34 +14,32 @@ function UndergroundSwitch() {
   }, [underground]);
 
   return (
-    <>
-      <div
-        className="groundSwitchDiv"
-        style={{
-          position: "fixed",
-          zIndex: 10,
-          bottom: 5,
-          // left: 0,
-          color: "white",
-          borderStyle: "solid",
-          borderColor: "grey",
-          backgroundColor: "#2b2b2b",
-          paddingLeft: 5,
-          paddingRight: 5,
-          paddingTop: 4,
-          paddingBottom: 4,
-        }}
-      >
-        Ground: {""}
-        Off{" "}
-        <calcite-switch
-          oncalciteSwitchChange={(event: any) =>
-            setUnderground(event.target.checked)
-          }
-        ></calcite-switch>{" "}
-        On
-      </div>
-    </>
+    <div
+      style={{
+        position: "fixed",
+        zIndex: 10,
+        bottom: 5,
+        // left: 0,
+        color: "white",
+        borderStyle: "solid",
+        borderColor: "grey",
+        borderWidth: "0.5px",
+        backgroundColor: "#2b2b2b",
+        paddingLeft: 5,
+        paddingRight: 5,
+        paddingTop: 4,
+        paddingBottom: 4,
+      }}
+    >
+      Ground: {""}
+      Off{" "}
+      <calcite-switch
+        oncalciteSwitchChange={(event: any) =>
+          setUnderground(event.target.checked)
+        }
+      ></calcite-switch>{" "}
+      On
+    </div>
   );
 }
 

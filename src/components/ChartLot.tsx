@@ -34,7 +34,6 @@ import {
 import "@arcgis/map-components/dist/components/arcgis-scene";
 import "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import {
   chartSetter,
@@ -45,6 +44,7 @@ import {
 import { dateDisplayKeys } from "../interfaceKeys";
 import { useQuery } from "@tanstack/react-query";
 import type { DisplayDates, ChartResponse } from "../interfaceKeys";
+import ChartPieSeriesRender from "chart-pie-series-render";
 
 /// Draw chart
 const LotChart = () => {
@@ -67,7 +67,7 @@ const LotChart = () => {
   });
 
   //--- Chart data
-  const { data } = useQuery<ChartResponse | any>({
+  const { data, isLoading } = useQuery<ChartResponse | any>({
     queryKey: [cpackage, urgentType, lotStatusField, lotLayer, urgentType],
     queryFn: async () => {
       const qe_urgent = urgentType === "OFF" ? undefined : querySuperUrgent;
@@ -141,6 +141,9 @@ const LotChart = () => {
         perc_ho: perc_ho,
       };
     },
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     // staleTime: Infinity, // when this is defined, queryDefinitionExpression fails. segmented control?
   });
 
@@ -210,24 +213,25 @@ const LotChart = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    chartRenderer({
-      chart: chart,
-      pieSeries: pieSeries,
-      legend: legend,
-      root: root,
-      qChart: queryc_lot,
-      q2Expression: urgentType === "OFF" ? undefined : querySuperUrgent,
-      status_field: lotStatusField,
-      arcgisScene: arcgisScene,
-      updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      pieSeriesScale: new_pieSeriesScale,
-      pieInnerLabel: "PRIVATE LOTS",
-      pieInnerLabelFontSize: new_pieInnerLabelFontSize,
-      pieInnerValueFontSize: new_pieInnerValueFontSize,
-      layer: lotLayer,
-      statusArray: lotStatusQuery,
-    });
+    const crender = new ChartPieSeriesRender(
+      chart,
+      pieSeries,
+      legend,
+      root,
+      queryc_lot,
+      urgentType === "OFF" ? undefined : querySuperUrgent,
+      lotStatusField,
+      arcgisScene?.view,
+      setChartPanelwidth,
+      chartData,
+      new_pieSeriesScale,
+      "PRIVATE LOTS",
+      new_pieInnerLabelFontSize,
+      new_pieInnerValueFontSize,
+      lotLayer,
+      lotStatusQuery,
+    );
+    crender.chartDataRenderer();
 
     // Dispose root
     return () => {
@@ -253,7 +257,7 @@ const LotChart = () => {
         }}
       >
         <img
-          src="https://EijiGorilla.github.io/Symbols/Land_logo.png"
+          src="https://eijigorilla.github.io/Symbols/Land_Acquisition/Land_Logo2.png"
           alt="Land Logo"
           height={`${new_imageSize}%`}
           width={`${new_imageSize}%`}
@@ -273,6 +277,7 @@ const LotChart = () => {
               fontFamily: "calibri",
               lineHeight: "1.2",
               margin: "auto",
+              opacity: isLoading ? 0 : 1,
             }}
           >
             {thousands_separators(totaln)}
@@ -293,6 +298,7 @@ const LotChart = () => {
               lineHeight: "1.2",
               margin: "auto",
               fontWeight: "bold",
+              opacity: isLoading ? 0 : 1,
             }}
           >
             {total_aa && thousands_separators(total_aa.toFixed(0))}
@@ -373,6 +379,7 @@ const LotChart = () => {
           color: "white",
           marginBottom: "1%",
           marginTop: "5%",
+          opacity: isLoading ? 0 : 1,
         }}
       ></div>
 
@@ -417,6 +424,7 @@ const LotChart = () => {
               fontFamily: "calibri",
               lineHeight: "1.2",
               margin: "auto",
+              opacity: isLoading ? 0 : 1,
             }}
           >
             {perc_ho}% ({thousands_separators(total_ho)})
@@ -437,6 +445,7 @@ const LotChart = () => {
               lineHeight: "1.2",
               margin: "auto",
               fontWeight: "bold",
+              opacity: isLoading ? 0 : 1,
             }}
           >
             {total_hoa && thousands_separators(total_hoa.toFixed(0))}

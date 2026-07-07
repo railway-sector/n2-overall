@@ -1,43 +1,40 @@
-import { useRef, useState, useEffect, memo } from "react";
+import { useEffect, memo } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
-import { generateHandedOverAreaData } from "../query";
-
-// Dispose function
-function maybeDisposeRoot(divId: any) {
-  am5.array.each(am5.registry.rootElements, function (root) {
-    if (root.dom.id === divId) {
-      root.dispose();
-    }
-  });
-}
+import { handedOverAreaByContractp } from "../query";
+import { rootSetter } from "../chartSetter";
+import { useQuery } from "@tanstack/react-query";
+import { lotLayer } from "../layers";
+import {
+  affectedAreaField,
+  cp_list,
+  lotHandedOverAreaField,
+} from "../uniqueValues";
 
 const HandedOverAreaChart = memo(() => {
-  const chartRef = useRef<unknown | any | undefined>({});
-  const [lotHandedOverAreaData, setLotHandedOverAreaData] = useState([]);
-
   const chartID = "lot-handedover";
-  useEffect(() => {
-    generateHandedOverAreaData().then((result: any) => {
-      setLotHandedOverAreaData(result);
-    });
-  }, []);
+
+  const { data, isLoading } = useQuery<any>({
+    queryKey: [lotLayer, affectedAreaField, lotHandedOverAreaField],
+    queryFn: async () => {
+      const chartData = await handedOverAreaByContractp({
+        aa_field: affectedAreaField,
+        hoa_field: lotHandedOverAreaField,
+        cp_list: cp_list,
+        layer: lotLayer,
+      });
+
+      return {
+        chartData: chartData ?? [],
+      };
+    },
+    staleTime: Infinity,
+  });
+  const chartData = data?.chartData ?? [];
 
   useEffect(() => {
-    maybeDisposeRoot(chartID);
-    const root = am5.Root.new(chartID);
-    root.container.children.clear();
-    root._logo?.dispose();
+    const root = rootSetter({ chartID: chartID });
 
-    // Set themesf
-    root.setThemes([
-      am5themes_Animated.new(root),
-      am5themes_Responsive.new(root),
-    ]);
-
-    // Create chart
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
@@ -47,7 +44,6 @@ const HandedOverAreaChart = memo(() => {
         layout: root.verticalLayout,
       }),
     );
-    chartRef.current = chart;
 
     chart.children.unshift(
       am5.Label.new(root, {
@@ -80,17 +76,15 @@ const HandedOverAreaChart = memo(() => {
 
     // Label properties Y axis
     yAxis.get("renderer").labels.template.setAll({
-      //oversizedBehavior: "wrap",
       textAlign: "center",
       fill: am5.color("#ffffff"),
-      //maxWidth: 150,
       fontSize: 12,
     });
 
     yRenderer.grid.template.setAll({
       location: 1,
     });
-    yAxis.data.setAll(lotHandedOverAreaData);
+    yAxis.data.setAll(chartData);
 
     // Set xaxis
     const xRenderer = am5xy.AxisRendererX.new(root, {
@@ -131,7 +125,7 @@ const HandedOverAreaChart = memo(() => {
         //tooltipText: "{name}, {categoryY}: {valueX}%",
         //tooltipY: am5.percent(90)
       });
-      series.data.setAll(lotHandedOverAreaData);
+      series.data.setAll(chartData);
 
       // Make stuff animate on load
       // https://www.amcharts.com/docs/v5/concepts/animations/
@@ -155,7 +149,7 @@ const HandedOverAreaChart = memo(() => {
     return () => {
       root.dispose();
     };
-  }, [chartID, lotHandedOverAreaData]);
+  }, [chartID, chartData]);
 
   return (
     <>
@@ -171,6 +165,7 @@ const HandedOverAreaChart = memo(() => {
           bottom: 10,
           marginLeft: "1vw",
           marginRight: "auto",
+          opacity: isLoading ? 0 : 1,
         }}
       ></div>
     </>

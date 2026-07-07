@@ -11,7 +11,6 @@ import {
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { nloLayer, piechart_nlo, queryc_nlo } from "../layers";
-import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import {
   chartSetter,
@@ -23,6 +22,7 @@ import {
 import { dateDisplayKeys } from "../interfaceKeys";
 import { useQuery } from "@tanstack/react-query";
 import type { DisplayDates, ChartResponse } from "../interfaceKeys";
+import ChartPieSeriesRender from "chart-pie-series-render";
 
 /// Draw chart
 const ChartNlo = memo(() => {
@@ -43,7 +43,7 @@ const ChartNlo = memo(() => {
     staleTime: Infinity,
   });
 
-  const { data } = useQuery<ChartResponse | any>({
+  const { data, isLoading } = useQuery<ChartResponse | any>({
     queryKey: [cpackage, nloStatusField, nloLayer],
     queryFn: async () => {
       queryc_nlo.qValues = [cpackage === "All" ? undefined : cpackage];
@@ -118,23 +118,25 @@ const ChartNlo = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    chartRenderer({
-      chart: chart,
-      pieSeries: pieSeries,
-      legend: legend,
-      root: root,
-      qChart: queryc_nlo,
-      status_field: nloStatusField,
-      arcgisScene: arcgisScene,
-      updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      pieSeriesScale: new_pieSeriesScale,
-      pieInnerLabel: "HOUSEHOLDS",
-      pieInnerLabelFontSize: new_pieInnerLabelFontSize,
-      pieInnerValueFontSize: new_pieInnerValueFontSize,
-      layer: nloLayer,
-      statusArray: nloStatusQuery,
-    });
+    const crender = new ChartPieSeriesRender(
+      chart,
+      pieSeries,
+      legend,
+      root,
+      queryc_nlo,
+      undefined,
+      nloStatusField,
+      arcgisScene?.view,
+      setChartPanelwidth,
+      chartData,
+      new_pieSeriesScale,
+      "HOUSEHOLDS",
+      new_pieInnerLabelFontSize,
+      new_pieInnerValueFontSize,
+      nloLayer,
+      nloStatusQuery,
+    );
+    crender.chartDataRenderer();
 
     return () => {
       root.dispose();
@@ -182,6 +184,7 @@ const ChartNlo = memo(() => {
               fontFamily: "calibri",
               lineHeight: "1.2",
               margin: "auto",
+              opacity: isLoading ? 0 : 1,
             }}
           >
             {thousands_separators(totaln)}
@@ -204,6 +207,7 @@ const ChartNlo = memo(() => {
           height: "70vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
+          opacity: isLoading ? 0 : 1,
         }}
       ></div>
     </>

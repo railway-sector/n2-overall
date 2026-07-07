@@ -77,6 +77,7 @@ export const labelSymbol3DLine = ({
 
 //--- type definitions
 export const contractPackage = ["All", "N-01", "N-02", "N-03", "N-04"];
+export const cp_list = ["N-01", "N-02", "N-03", "N-04"];
 
 // month
 export const months = [

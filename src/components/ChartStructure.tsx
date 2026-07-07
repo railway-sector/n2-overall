@@ -15,7 +15,6 @@ import {
   queryc_struc,
   structureLayer,
 } from "../layers";
-import { chartRenderer } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { dateDisplayKeys } from "../interfaceKeys";
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +25,7 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
+import ChartPieSeriesRender from "chart-pie-series-render";
 
 /// Draw chart
 const ChartStructure = () => {
@@ -46,7 +46,7 @@ const ChartStructure = () => {
     staleTime: Infinity,
   });
 
-  const { data } = useQuery<ChartResponse | any>({
+  const { data, isLoading } = useQuery<ChartResponse | any>({
     queryKey: [cpackage, structureStatusField, structureLayer],
     queryFn: async () => {
       queryc_struc.qValues = [cpackage === "All" ? undefined : cpackage];
@@ -122,23 +122,25 @@ const ChartStructure = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    chartRenderer({
-      chart: chart,
-      pieSeries: pieSeries,
-      legend: legend,
-      root: root,
-      qChart: queryc_struc,
-      status_field: structureStatusField,
-      arcgisScene: arcgisScene,
-      updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      pieSeriesScale: new_pieSeriesScale,
-      pieInnerLabel: "STRUCTURES",
-      pieInnerLabelFontSize: new_pieInnerLabelFontSize,
-      pieInnerValueFontSize: new_pieInnerValueFontSize,
-      layer: structureLayer,
-      statusArray: structureStatusQuery,
-    });
+    const crender = new ChartPieSeriesRender(
+      chart,
+      pieSeries,
+      legend,
+      root,
+      queryc_struc,
+      undefined,
+      structureStatusField,
+      arcgisScene?.view,
+      setChartPanelwidth,
+      chartData,
+      new_pieSeriesScale,
+      "STRUCTURES",
+      new_pieInnerLabelFontSize,
+      new_pieInnerValueFontSize,
+      structureLayer,
+      structureStatusQuery,
+    );
+    crender.chartDataRenderer();
 
     return () => {
       root.dispose();
@@ -185,6 +187,7 @@ const ChartStructure = () => {
               fontFamily: "calibri",
               lineHeight: "1.2",
               margin: "auto",
+              opacity: isLoading ? 0 : 1,
             }}
           >
             {thousands_separators(totaln)}
@@ -211,6 +214,7 @@ const ChartStructure = () => {
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginTop: "5%",
+          opacity: isLoading ? 0 : 1,
         }}
       ></div>
     </>

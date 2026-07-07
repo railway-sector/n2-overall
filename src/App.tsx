@@ -51,7 +51,6 @@ export function App(): React.JSX.Element {
               <ChartMain />
               <ActionPanel />
               <MapDisplay />
-
               <Header />
             </QueryClientProvider>
           </MyContext>

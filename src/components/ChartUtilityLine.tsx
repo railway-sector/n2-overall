@@ -136,7 +136,7 @@ const ChartUtilityLine = () => {
       seriesStatusColor: viaductStatusColorForChart,
       strokeColor: chartBorderLineColor,
       strokeWidth: chartBorderLineWidth,
-      arcgisScene: arcgisScene,
+      view: arcgisScene?.view,
       new_chartIconSize: new_chartIconSize,
       new_axisFontSize: new_axisFontSize,
       chartIconPositionX: chartIconPositionX,
