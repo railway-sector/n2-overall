@@ -1,13 +1,6 @@
-import { useEffect, useRef, use, useState } from "react";
-import {
-  piechart_tcomp,
-  queryc_treecomp,
-  treeCompensationLayer,
-} from "../layers";
-import {
-  statusTreeCompensationChart,
-  treeCompen_status_field,
-} from "../uniqueValues";
+import { useEffect, useRef, useState, use } from "react";
+import { treeCompensationLayer } from "../layers";
+import { cp_f, treem_status_f, treem_status_q } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { queryDefinitionExpression } from "../queryDefinition";
@@ -20,32 +13,34 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
-import { pieChartData } from "../query";
+import { makeQuery, pieChartData, PieChartRenderType } from "../query";
 import ChartPieSeriesRender from "chart-pie-series-render";
+import ChartPieSeries from "chart-pie-series";
 
 const ChartTreeCompensation = () => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [_chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
 
-  const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, treeCompen_status_field, treeCompensationLayer],
-    queryFn: async () => {
-      queryc_treecomp.qValues = [cpackage === "All" ? undefined : cpackage];
+  const qV = [cpackage === "All" ? undefined : cpackage];
+  const qF = [cp_f];
+  const queryc_treem = makeQuery(qV, qF);
 
+  const { data, isLoading } = useQuery<ChartResponse | any>({
+    queryKey: [cpackage, treem_status_f, treeCompensationLayer],
+    queryFn: async () => {
       queryDefinitionExpression({
-        queryExpression: queryc_treecomp.queryExpression(),
+        queryExpression: queryc_treem.queryExpression(),
         featureLayer: [treeCompensationLayer],
       });
-
       //--- chart data
       const chartData = await pieChartData({
-        piechart: piechart_tcomp,
-        qChart: queryc_treecomp,
+        piechart: new ChartPieSeries(),
+        qChart: queryc_treem,
         layer: treeCompensationLayer,
-        statusList: statusTreeCompensationChart,
-        statusField: treeCompen_status_field,
-        statisticField: treeCompen_status_field,
+        statusList: treem_status_q,
+        statusField: treem_status_f,
+        statisticField: treem_status_f,
         statisticType: "count",
       });
 
@@ -79,6 +74,7 @@ const ChartTreeCompensation = () => {
       root: root,
       categoryField: "category",
       valueField: "value",
+      legendLabelText: "{category}",
       legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
       radius: 45,
       innerRadius: 28,
@@ -98,25 +94,27 @@ const ChartTreeCompensation = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    const crender = new ChartPieSeriesRender(
+    PieChartRenderType({
+      render: new ChartPieSeriesRender(),
       chart,
-      pieSeries,
+      pieSeries: pieSeries,
       legend,
       root,
-      queryc_treecomp,
-      undefined,
-      treeCompen_status_field,
-      arcgisScene?.view,
-      setChartPanelwidth,
-      chartData,
-      new_pieSeriesScale,
-      "TREES",
-      new_pieInnerLabelFontSize,
-      new_pieInnerValueFontSize,
-      treeCompensationLayer,
-      statusTreeCompensationChart,
-    );
-    crender.chartDataRenderer();
+      qChart: queryc_treem,
+      q2Expression: undefined,
+      status_field: treem_status_f,
+      view: arcgisScene?.view,
+      updateChartPanelwidth: setChartPanelwidth,
+      data: chartData,
+      seriesScale: new_pieSeriesScale,
+      innerLabel: "TREES",
+      innerLabelFontSize: new_pieInnerLabelFontSize,
+      innerValueFontSize: new_pieInnerValueFontSize,
+      layer: treeCompensationLayer,
+      statusArray: treem_status_q,
+      bkg_color_switch: false,
+      seriesFillHash: undefined,
+    });
 
     return () => {
       root.dispose();

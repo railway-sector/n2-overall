@@ -1,27 +1,28 @@
 import { useEffect, useRef, useState, use } from "react";
-import {
-  chartstack_utill,
-  queryc_utill,
-  utilityLineLayer,
-  utilityLineLayer1,
-} from "../layers";
+import { utilityLineLayer, utilityLineLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import {
-  utility_statusField,
-  utility_typeField,
-  utilityStatusArray,
-  utilityTypeChart,
-  viaductStatusColorForChart,
-} from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
-import { chartRendererColumn } from "../chartRenderer";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import { legendSetter, rootSetter } from "../chartSetter";
-import { stackColumnsChartData } from "../query";
+import {
+  makeQuery,
+  stackColumnChartData,
+  stackColumnChartRender,
+} from "../query";
+import ChartStackColumnRender from "chart-stack-column-render";
+import {
+  cp_f,
+  util_status_f,
+  util_status_q,
+  util_type_f,
+  util_types,
+  viastatus_q,
+} from "../uniqueValues";
+import ChartStackColumns from "chart-stack-column";
 
 // Draw chart
 const ChartUtilityLine = () => {
@@ -29,28 +30,27 @@ const ChartUtilityLine = () => {
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage, updateUtilityLinestats } = use(MyContext);
 
-  const legendRef = useRef<unknown | any | undefined>({});
-  const chartRef = useRef<unknown | any | undefined>({});
-  const chartID = "utility-line-bar";
+  //--- Query Expression
+  const qV = [cpackage === "All" ? undefined : cpackage];
+  const qF = [cp_f];
+  const queryc_utill = makeQuery(qV, qF);
 
-  const { data } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, utility_statusField, utilityLineLayer],
+  const { data, isLoading } = useQuery<ChartResponse | any>({
+    queryKey: [cpackage, util_status_f, utilityLineLayer],
     queryFn: async () => {
-      queryc_utill.qValues = [cpackage === "All" ? undefined : cpackage];
-
       queryDefinitionExpression({
         queryExpression: queryc_utill.queryExpression(),
         featureLayer: [utilityLineLayer, utilityLineLayer1],
       });
 
       //--- chart data
-      const chartData = await stackColumnsChartData({
-        stackchart: chartstack_utill,
+      const chartData = await stackColumnChartData({
+        colchart: new ChartStackColumns(),
         qChart: queryc_utill,
-        categoryTypes: utilityTypeChart,
-        categoryTypeField: utility_typeField,
+        categoryTypes: util_types,
+        categoryTypeField: util_type_f,
         layers: [utilityLineLayer],
-        statusField: utility_statusField,
+        statusField: util_status_f,
         statusState: [0, 2, 3, 1],
       });
 
@@ -64,7 +64,10 @@ const ChartUtilityLine = () => {
     staleTime: Infinity,
   });
   const chartData = data?.chartData || [];
-  // const totaln = data?.totaln || 0;
+
+  const legendRef = useRef<unknown | any | undefined>({});
+  const chartRef = useRef<unknown | any | undefined>({});
+  const chartID = "utility-line-bar";
 
   // Define parameters
   const marginTop = 0;
@@ -81,11 +84,8 @@ const ChartUtilityLine = () => {
   const chartBorderLineColor = "#00c5ff";
   const chartBorderLineWidth = 0.4;
 
-  // ************************************
-  //  Responsive Chart parameters
-  // ***********************************
-  const new_chartIconSize = chartPanelwidth * 0.07;
-  const new_axisFontSize = chartPanelwidth * 0.036;
+  const new_chartIconSize = chartPanelwidth * 0.06;
+  const new_axisFontSize = chartPanelwidth * 0.03;
 
   // Utility point
   useEffect(() => {
@@ -121,27 +121,32 @@ const ChartUtilityLine = () => {
     });
     legendRef.current = legend;
 
-    chartRendererColumn({
-      root: root,
-      chart: chart,
-      data: chartData,
+    // chart renderer
+    stackColumnChartRender({
+      render: new ChartStackColumnRender(),
+      revit: false,
       layers: [utilityLineLayer, utilityLineLayer1],
+      root,
+      chart,
+      data: chartData,
+      buildingLayer: undefined,
       qChart: queryc_utill,
-      chartCategoryTypes: utilityTypeChart,
-      chartCategoryTypeField: utility_typeField,
-      statusTypename: ["Completed", "To be Constructed"],
-      statusStatename: ["comp", "incomp"],
-      statusArray: utilityStatusArray,
-      statusField: utility_statusField,
-      seriesStatusColor: viaductStatusColorForChart,
+      chartCategoryTypes: util_types,
+      chartCategoryTypeField: util_type_f,
+      statusTypename: ["Completed", "To be Constructed"], //["Completed", "To be Constructed", "Under Construction"],
+      statusStatename: ["comp", "incomp"], //["comp", "incomp", "ongoing"],
+      statusArray: util_status_q,
+      statusField: util_status_f,
+      seriesStatusColor: viastatus_q.map((c: any) => c.color),
       strokeColor: chartBorderLineColor,
       strokeWidth: chartBorderLineWidth,
       view: arcgisScene?.view,
-      new_chartIconSize: new_chartIconSize,
-      new_axisFontSize: new_axisFontSize,
-      chartIconPositionX: chartIconPositionX,
-      chartPaddingRightIconLabel: chartPaddingRightIconLabel,
-      legend: legend,
+      setLayerViewFilter: undefined,
+      new_chartIconSize,
+      new_axisFontSize,
+      chartIconPositionX,
+      chartPaddingRightIconLabel,
+      legend,
       updateChartPanelwidth: setChartPanelwidth,
     });
 
@@ -172,11 +177,12 @@ const ChartUtilityLine = () => {
         id={chartID}
         style={{
           // width: "23vw",
-          height: "30vh",
+          height: "32vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginRight: "15px",
           marginLeft: "15px",
+          opacity: isLoading ? 0 : 1,
         }}
       ></div>
     </>

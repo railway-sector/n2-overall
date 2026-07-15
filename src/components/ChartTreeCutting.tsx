@@ -1,19 +1,25 @@
 import { useEffect, useRef, useState, use } from "react";
-import { piechart_tcut, queryc_treecut, treeCuttingLayer } from "../layers";
-import { thousands_separators, dateUpdate, pieChartData } from "../query";
+import { treeCuttingLayer } from "../layers";
 import {
+  thousands_separators,
+  dateUpdate,
+  pieChartData,
+  makeQuery,
+  PieChartRenderType,
+} from "../query";
+import {
+  cp_f,
+  monitorLists,
   primaryLabelColor,
-  statusTreeCuttingChart,
-  treeStatus_field,
-  updatedDateCategoryNames,
+  treec_status_f,
+  treec_status_q,
   valueLabelColor,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { queryDefinitionExpression } from "../queryDefinition";
-import { dateDisplayKeys } from "../interfaceKeys";
 import { useQuery } from "@tanstack/react-query";
-import type { DisplayDates, ChartResponse } from "../interfaceKeys";
+import type { ChartResponse } from "../interfaceKeys";
 import {
   chartSetter,
   legendSetter,
@@ -21,43 +27,42 @@ import {
   seriesSetter,
 } from "../chartSetter";
 import ChartPieSeriesRender from "chart-pie-series-render";
+import ChartPieSeries from "chart-pie-series";
 
 const ChartTreeCutting = () => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
 
-  //--- 0. As of date
-  const { data: dates } = useQuery<DisplayDates | any>({
-    queryKey: [dateDisplayKeys.selected, updatedDateCategoryNames[4]],
-    queryFn: () => dateUpdate(updatedDateCategoryNames[4]),
-    select: (response) => {
-      return {
-        asOfDate: response[0][0],
-        daysPass: response[0][1],
-      };
-    },
+  //--- As of date
+  const { data: date } = useQuery<any>({
+    queryKey: ["As_Of_Date"],
+    queryFn: () => dateUpdate(monitorLists[4]),
     staleTime: Infinity,
   });
+  const asofdate = date ?? "";
+
+  //--- Query expression
+  const qV = [cpackage === "All" ? undefined : cpackage];
+  const qF = [cp_f];
+  const queryc_treec = makeQuery(qV, qF);
 
   const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, treeCuttingLayer, treeStatus_field],
+    queryKey: [cpackage, treeCuttingLayer, treec_status_f],
     queryFn: async () => {
-      queryc_treecut.qValues = [cpackage === "All" ? undefined : cpackage];
-
       queryDefinitionExpression({
-        queryExpression: queryc_treecut.queryExpression(),
+        queryExpression: queryc_treec.queryExpression(),
         featureLayer: [treeCuttingLayer],
       });
 
       //--- chart data
       const chartData = await pieChartData({
-        piechart: piechart_tcut,
-        qChart: queryc_treecut,
+        piechart: new ChartPieSeries(),
+        qChart: queryc_treec,
         layer: treeCuttingLayer,
-        statusList: statusTreeCuttingChart,
-        statusField: treeStatus_field,
-        statisticField: treeStatus_field,
+        statusList: treec_status_q,
+        statusField: treec_status_f,
+        statisticField: treec_status_f,
         statisticType: "count",
       });
 
@@ -95,6 +100,7 @@ const ChartTreeCutting = () => {
       root: root,
       categoryField: "category",
       valueField: "value",
+      legendLabelText: "{category}",
       legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
       radius: 45,
       innerRadius: 28,
@@ -114,25 +120,27 @@ const ChartTreeCutting = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    const crender = new ChartPieSeriesRender(
+    PieChartRenderType({
+      render: new ChartPieSeriesRender(),
       chart,
-      pieSeries,
+      pieSeries: pieSeries,
       legend,
       root,
-      queryc_treecut,
-      undefined,
-      treeStatus_field,
-      arcgisScene?.view,
-      setChartPanelwidth,
-      chartData,
-      new_pieSeriesScale,
-      "TREES",
-      new_pieInnerLabelFontSize,
-      new_pieInnerValueFontSize,
-      treeCuttingLayer,
-      statusTreeCuttingChart,
-    );
-    crender.chartDataRenderer();
+      qChart: queryc_treec,
+      q2Expression: undefined,
+      status_field: treec_status_f,
+      view: arcgisScene?.view,
+      updateChartPanelwidth: setChartPanelwidth,
+      data: chartData,
+      seriesScale: new_pieSeriesScale,
+      innerLabel: "TREES",
+      innerLabelFontSize: new_pieInnerLabelFontSize,
+      innerValueFontSize: new_pieInnerValueFontSize,
+      layer: treeCuttingLayer,
+      statusArray: treec_status_q,
+      bkg_color_switch: false,
+      seriesFillHash: undefined,
+    });
 
     return () => {
       root.dispose();
@@ -190,13 +198,13 @@ const ChartTreeCutting = () => {
 
       <div
         style={{
-          color: dates?.daysPass === true ? "red" : "gray",
+          color: "gray",
           fontSize: `${new_asofDateSize}px`,
           float: "right",
           marginRight: "5px",
         }}
       >
-        {!dates?.asOfDate ? "" : "As of " + dates?.asOfDate}
+        {asofdate ? `As of ${asofdate}` : `As of `}
       </div>
 
       <div

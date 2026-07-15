@@ -1,65 +1,14 @@
-//--- Dropdown
-export interface SelectedLocation {
-  cpackage: string | any;
-  landType: string | any;
-  landSection: string | any;
-}
-
-export const locationKeys = {
-  selected: ["selectedLocation"] as const,
-};
-
-//--- timeslider state type
-export interface TimeSliderState {
-  timesliderstate: boolean;
-}
-
-export const timesliderKeys = {
-  selected: ["selectedTimesliderState"] as const,
-};
-
-//-- date fields
-export interface DateFieldsType {
-  dateFields: any;
-  latestasofdate: any;
-}
-
-export const datefieldKeys = {
-  selected: ["selectedDateFields"] as const,
-};
-
-//--- Dates for chart
-export interface TimesliderFieldsTypes {
-  statusdateField?: string | any;
-  newHandedOverJVfield?: string | any;
-  newHandedoverNYfield?: string | any;
-}
-
-export const timesliderFieldKeys = {
-  selected: ["selectedTimesliderFields"] as const,
-};
-
-//-- Date for display
-export interface DisplayDates {
-  asOfDate?: any;
-  daysPass?: boolean;
-}
-
-export const dateDisplayKeys = {
-  selected: ["displayDates"] as const,
-};
-
 //--- Chart
 export interface ChartResponse {
   chartData: any[];
   totalNumber: number | string | undefined;
 }
 
-//--- background color for switch
-export interface BkColorSwitch {
-  bkColor: boolean;
-}
-
-export const bkColorKeys = {
-  selected: ["selectedBkColor"] as const,
-};
+export type statisticsType = "count" | "sum";
+export type StatusTypenamesType =
+  | "To be Constructed"
+  | "Under Construction"
+  | "delayed"
+  | "Completed";
+export type StatusStateType = "comp" | "incomp" | "ongoing" | "delayed";
+export type LayerNameType = "utility" | "viaduct" | "others";

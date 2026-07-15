@@ -1,17 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useRef, useState, useEffect, memo, use } from "react";
-import { dateUpdate, pieChartData, thousands_separators } from "../query";
 import {
-  nloStatusField,
+  dateUpdate,
+  makeQuery,
+  pieChartData,
+  PieChartRenderType,
+  thousands_separators,
+} from "../query";
+import {
+  nlo_status_f,
   primaryLabelColor,
-  nloStatusQuery,
-  updatedDateCategoryNames,
+  nlo_status_q,
   valueLabelColor,
+  cp_f,
 } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
-import { MyContext } from "../contexts/MyContext";
-import { nloLayer, piechart_nlo, queryc_nlo } from "../layers";
-import { queryDefinitionExpression } from "../queryDefinition";
+import { nloLayer } from "../layers";
+import { useQuery } from "@tanstack/react-query";
+import type { ChartResponse } from "../interfaceKeys";
 import {
   chartSetter,
   legendSetter,
@@ -19,63 +25,31 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
-import { dateDisplayKeys } from "../interfaceKeys";
-import { useQuery } from "@tanstack/react-query";
-import type { DisplayDates, ChartResponse } from "../interfaceKeys";
 import ChartPieSeriesRender from "chart-pie-series-render";
+import { MyContext } from "../contexts/MyContext";
+import ChartPieSeries from "chart-pie-series";
+import { queryDefinitionExpression } from "../queryDefinition";
+//--------------------------------------------//
+//              Chart Component                //
+//--------------------------------------------//
 
-/// Draw chart
+//--- memo prevents re-rendering the Component when the parent Component
+//--- (ChartMain) is rendered.
 const ChartNlo = memo(() => {
-  const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
-  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
 
-  //--- 0. As of date
-  const { data: dates } = useQuery<DisplayDates | any>({
-    queryKey: [dateDisplayKeys.selected, updatedDateCategoryNames[2]],
-    queryFn: () => dateUpdate(updatedDateCategoryNames[2]),
-    select: (response) => {
-      return {
-        asOfDate: response[0][0],
-        daysPass: response[0][1],
-      };
-    },
+  const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
+
+  //--- As of date
+  const { data: date } = useQuery<any>({
+    queryKey: ["As_Of_Date"],
+    queryFn: () => dateUpdate("Viaduct"),
     staleTime: Infinity,
   });
+  const asofdate = date ?? "";
 
-  const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, nloStatusField, nloLayer],
-    queryFn: async () => {
-      queryc_nlo.qValues = [cpackage === "All" ? undefined : cpackage];
-      queryc_nlo.qExpression = `${nloStatusField} >= 1`;
-
-      queryDefinitionExpression({
-        queryExpression: queryc_nlo.queryExpression(),
-        featureLayer: [nloLayer],
-      });
-
-      //--- chart data
-      const chartData = await pieChartData({
-        piechart: piechart_nlo,
-        qChart: queryc_nlo,
-        layer: nloLayer,
-        statusList: nloStatusQuery,
-        statusField: nloStatusField,
-        statisticField: nloStatusField,
-        statisticType: "count",
-      });
-
-      return {
-        chartData: chartData[0] || [],
-        totaln: chartData[1] || 0,
-      };
-    },
-    // structuralSharing: false,
-    staleTime: Infinity,
-  });
-  const chartData = data?.chartData || [];
-  const totaln = data?.totaln;
-
+  //--- Chart parameters
   const new_fontSize = chartPanelwidth / 22.3;
   const new_valueSize = new_fontSize * 1.55;
   const new_imageSize = chartPanelwidth * 0.028;
@@ -86,20 +60,55 @@ const ChartNlo = memo(() => {
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
-  const chartRef = useRef<unknown | any | undefined>({});
   const chartID = "nlo-chart";
+
+  //--- Generat Chart Data
+  const qV = [cpackage === "All" ? undefined : cpackage];
+  const qF = [cp_f];
+  const queryc_nlo = makeQuery(qV, qF, `${nlo_status_f} >= 1`);
+
+  const { data, isLoading } = useQuery<ChartResponse | any>({
+    queryKey: [cpackage, nlo_status_f, nloLayer],
+    queryFn: async () => {
+      queryDefinitionExpression({
+        queryExpression: queryc_nlo.queryExpression(),
+        featureLayer: [nloLayer],
+      });
+
+      //--- Pie chart data
+      const chartData = await pieChartData({
+        piechart: new ChartPieSeries(),
+        qChart: queryc_nlo,
+        layer: nloLayer,
+        statusList: nlo_status_q,
+        statusField: nlo_status_f,
+        statisticField: nlo_status_f,
+        statisticType: "count",
+      });
+
+      return {
+        chartData: chartData[0] || [],
+        totalNumber: chartData[1],
+      };
+    },
+    staleTime: Infinity,
+  });
+
+  //--- Call chart data
+  const chartData = data?.chartData || [];
+  const totalNumber = data?.totalNumber || 0;
 
   useEffect(() => {
     maybeDisposeRoot(chartID);
     const root = rootSetter({ chartID: chartID });
-    const chart = chartSetter({ root: root });
-    chartRef.current = chart;
+    const chart = chartSetter({ root: root, y: -10 });
 
     const pieSeries = seriesSetter({
       chart: chart,
       root: root,
       categoryField: "category",
       valueField: "value",
+      legendLabelText: "{category}",
       legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
       radius: 45,
       innerRadius: 28,
@@ -118,25 +127,27 @@ const ChartNlo = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    const crender = new ChartPieSeriesRender(
+    PieChartRenderType({
+      render: new ChartPieSeriesRender(),
       chart,
-      pieSeries,
+      pieSeries: pieSeries,
       legend,
       root,
-      queryc_nlo,
-      undefined,
-      nloStatusField,
-      arcgisScene?.view,
-      setChartPanelwidth,
-      chartData,
-      new_pieSeriesScale,
-      "HOUSEHOLDS",
-      new_pieInnerLabelFontSize,
-      new_pieInnerValueFontSize,
-      nloLayer,
-      nloStatusQuery,
-    );
-    crender.chartDataRenderer();
+      qChart: queryc_nlo,
+      q2Expression: undefined,
+      status_field: nlo_status_f,
+      view: arcgisScene?.view,
+      updateChartPanelwidth: setChartPanelwidth,
+      data: chartData,
+      seriesScale: new_pieSeriesScale,
+      innerLabel: "HOUSEHOLDS",
+      innerLabelFontSize: new_pieInnerLabelFontSize,
+      innerValueFontSize: new_pieInnerValueFontSize,
+      layer: nloLayer,
+      statusArray: nlo_status_q,
+      bkg_color_switch: false,
+      seriesFillHash: undefined,
+    });
 
     return () => {
       root.dispose();
@@ -164,7 +175,11 @@ const ChartNlo = memo(() => {
           alt="Structure Logo"
           height={`${new_imageSize}%`}
           width={`${new_imageSize}%`}
-          style={{ paddingTop: "5px", paddingLeft: "5px" }}
+          style={{
+            paddingTop: "5px",
+            paddingLeft: "5px",
+            opacity: isLoading ? 0 : 1,
+          }}
         />
         <dl style={{ alignItems: "center" }}>
           <dt
@@ -187,19 +202,19 @@ const ChartNlo = memo(() => {
               opacity: isLoading ? 0 : 1,
             }}
           >
-            {thousands_separators(totaln)}
+            {thousands_separators(totalNumber)}
           </dd>
         </dl>
       </div>
       <div
         style={{
-          color: dates?.daysPass === true ? "red" : "gray",
+          color: "gray",
           fontSize: `${new_asofDateSize}px`,
           float: "right",
           marginRight: "5px",
         }}
       >
-        {!dates?.asOfDate ? "" : "As of " + dates?.asOfDate}
+        {asofdate ? `As of ${asofdate}` : `As of `}
       </div>
       <div
         id={chartID}

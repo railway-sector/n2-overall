@@ -1,17 +1,13 @@
 import { use, useEffect, useRef, useState } from "react";
-import {
-  handedOverLotLayer,
-  lotLayer,
-  queryc_lot2,
-  queryc_lot,
-  piechart,
-} from "../layers";
+import { handedOverLotLayer, lotLayer } from "../layers";
 import {
   dateUpdate,
   fieldStatistic,
   highlightLot,
   highlightRemove,
+  makeQuery,
   pieChartData,
+  PieChartRenderType,
   thousands_separators,
   zoomToLayer,
 } from "../query";
@@ -19,17 +15,18 @@ import "@esri/calcite-components/dist/components/calcite-segmented-control";
 import "@esri/calcite-components/dist/components/calcite-segmented-control-item";
 import "@esri/calcite-components/dist/components/calcite-checkbox";
 import {
-  affectedAreaField,
-  lotHandedOverAreaField,
-  lotHandedOverField,
-  lotIdField,
-  lotStatusField,
-  lotStatusQuery,
+  lot_aa_f,
+  lot_hoa_f,
+  lot_ho_f,
+  lot_id_f,
+  lot_status_f,
+  lot_status_q,
   primaryLabelColor,
-  querySuperUrgent,
-  updatedDateCategoryNames,
-  urgent_switch,
   valueLabelColor,
+  cp_f,
+  lot_urgent_q,
+  monitorLists,
+  lot_urgent_switch,
 } from "../uniqueValues";
 import "@arcgis/map-components/dist/components/arcgis-scene";
 import "@arcgis/map-components/components/arcgis-scene";
@@ -41,91 +38,88 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
-import { dateDisplayKeys } from "../interfaceKeys";
 import { useQuery } from "@tanstack/react-query";
-import type { DisplayDates, ChartResponse } from "../interfaceKeys";
+import type { ChartResponse } from "../interfaceKeys";
 import ChartPieSeriesRender from "chart-pie-series-render";
+import ChartPieSeries from "chart-pie-series";
 
 /// Draw chart
 const LotChart = () => {
+  const { cpackage } = use(MyContext);
   const arcgisScene = document.querySelector("arcgis-scene");
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const [urgentType, setUrgentType] = useState<any>("OFF");
-  const { cpackage } = use(MyContext);
 
-  //--- 0. As of date
-  const { data: dates } = useQuery<DisplayDates | any>({
-    queryKey: [dateDisplayKeys.selected, updatedDateCategoryNames[0]],
-    queryFn: () => dateUpdate(updatedDateCategoryNames[0]),
-    select: (response) => {
-      return {
-        asOfDate: response[0][0],
-        daysPass: response[0][1],
-      };
-    },
+  //--- As of date
+  const { data: date } = useQuery<any>({
+    queryKey: ["As_Of_Date"],
+    queryFn: () => dateUpdate(monitorLists[0]),
     staleTime: Infinity,
   });
+  const asofdate = date ?? "";
+
+  //--- Common qValues and qFields for QueryExpressionLayers class
+  const qV = [cpackage === "All" ? undefined : cpackage];
+  const qF = [cp_f];
+  const urgent_qe = urgentType === "OFF" ? undefined : lot_urgent_q;
+
+  const queryc_lot = makeQuery(qV, qF, undefined, urgent_qe);
+  const queryc_lot2 = makeQuery(qV, qF, `${lot_status_f} <> 8`);
 
   //--- Chart data
   const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, urgentType, lotStatusField, lotLayer, urgentType],
+    queryKey: [cpackage, urgentType, lot_status_f, lotLayer, urgentType],
     queryFn: async () => {
-      const qe_urgent = urgentType === "OFF" ? undefined : querySuperUrgent;
-
-      queryc_lot.qValues = [cpackage === "All" ? undefined : cpackage];
-      queryc_lot.q2Expression = qe_urgent;
-
       queryDefinitionExpression({
         queryExpression: queryc_lot.queryExpression(),
         featureLayer: [lotLayer, handedOverLotLayer],
       });
 
-      //--- chart data
-      const chartData = await pieChartData({
-        piechart: piechart,
-        qChart: queryc_lot,
-        layer: lotLayer,
-        statusList: lotStatusQuery,
-        statusField: lotStatusField,
-        statisticField: lotStatusField,
-        statisticType: "count",
-      });
+      const [chartData, totaln, total_aa, total_hoa, total_ho] =
+        await Promise.all([
+          //--- Chart data
+          pieChartData({
+            piechart: new ChartPieSeries(),
+            qChart: queryc_lot,
+            layer: lotLayer,
+            statusList: lot_status_q,
+            statusField: lot_status_f,
+            statisticField: lot_status_f,
+            statisticType: "count",
+          }),
 
-      //--- total number of lots (public + private)
-      const totaln = await fieldStatistic({
-        qChart: queryc_lot.queryExpression(),
-        layer: lotLayer,
-        statisticField: lotIdField,
-        statisticType: "count",
-      });
+          //--- Total number of lots (public + private)
+          fieldStatistic({
+            qChart: queryc_lot.queryExpression(),
+            layer: lotLayer,
+            statisticField: lot_id_f,
+            statisticType: "count",
+          }),
 
-      //-- Total affected area
-      const total_aa = await fieldStatistic({
-        qChart: queryc_lot.queryExpression(),
-        layer: lotLayer,
-        statisticField: affectedAreaField,
-        statisticType: "sum",
-      });
+          //--- Total affected area (m2)
+          fieldStatistic({
+            qChart: queryc_lot.queryExpression(),
+            layer: lotLayer,
+            statisticField: lot_aa_f,
+            statisticType: "sum",
+          }),
 
-      //--- Total handed-over area
-      const total_hoa = await fieldStatistic({
-        qChart: queryc_lot.queryExpression(),
-        layer: lotLayer,
-        statisticField: lotHandedOverAreaField,
-        statisticType: "sum",
-      });
+          //--- Total handed-over area (m2)
+          fieldStatistic({
+            qChart: queryc_lot.queryExpression(),
+            layer: lotLayer,
+            statisticField: lot_hoa_f,
+            statisticType: "sum",
+          }),
 
-      //--- Total handed-over lots
-      queryc_lot2.qValues = [cpackage === "All" ? undefined : cpackage];
-      queryc_lot2.qExpression = `${lotStatusField} <> 8`;
-      queryc_lot2.q2Expression = qe_urgent;
-
-      const total_ho = await fieldStatistic({
-        qChart: queryc_lot2.queryExpression(),
-        layer: lotLayer,
-        statisticField: lotHandedOverField,
-        statisticType: "sum",
-      });
+          //--- Total number of handed-over
+          fieldStatistic({
+            qChart: queryc_lot2.queryExpression(),
+            layer: lotLayer,
+            statisticField: lot_ho_f,
+            statisticType: "sum",
+          }),
+        ]);
 
       //--- Handed-Over percent
       const perc_ho = Number(((total_ho / totaln) * 100).toFixed(0));
@@ -144,7 +138,6 @@ const LotChart = () => {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    // staleTime: Infinity, // when this is defined, queryDefinitionExpression fails. segmented control?
   });
 
   const chartData = data?.chartData || [];
@@ -174,7 +167,7 @@ const LotChart = () => {
   const [hoCheckbox, setHoCheckbox] = useState<any>(false);
 
   useEffect(() => {
-    urgentType === urgent_switch[1]
+    urgentType === lot_urgent_switch[1]
       ? highlightLot(lotLayer, arcgisScene)
       : highlightRemove();
   }, [urgentType]);
@@ -194,6 +187,7 @@ const LotChart = () => {
       root: root,
       categoryField: "category",
       valueField: "value",
+      legendLabelText: "{category}",
       legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
       radius: 45,
       innerRadius: 28,
@@ -213,27 +207,28 @@ const LotChart = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    const crender = new ChartPieSeriesRender(
+    PieChartRenderType({
+      render: new ChartPieSeriesRender(),
       chart,
-      pieSeries,
+      pieSeries: pieSeries,
       legend,
       root,
-      queryc_lot,
-      urgentType === "OFF" ? undefined : querySuperUrgent,
-      lotStatusField,
-      arcgisScene?.view,
-      setChartPanelwidth,
-      chartData,
-      new_pieSeriesScale,
-      "PRIVATE LOTS",
-      new_pieInnerLabelFontSize,
-      new_pieInnerValueFontSize,
-      lotLayer,
-      lotStatusQuery,
-    );
-    crender.chartDataRenderer();
+      qChart: queryc_lot,
+      q2Expression: urgent_qe,
+      status_field: lot_status_f,
+      view: arcgisScene?.view,
+      updateChartPanelwidth: setChartPanelwidth,
+      data: chartData,
+      seriesScale: new_pieSeriesScale,
+      innerLabel: "PRIVATE LOTS",
+      innerLabelFontSize: new_pieInnerLabelFontSize,
+      innerValueFontSize: new_pieInnerValueFontSize,
+      layer: lotLayer,
+      statusArray: lot_status_q,
+      bkg_color_switch: false,
+      seriesFillHash: undefined,
+    });
 
-    // Dispose root
     return () => {
       root.dispose();
     };
@@ -342,7 +337,7 @@ const LotChart = () => {
           }
         >
           {urgentType &&
-            urgent_switch.map((priority, index) => {
+            lot_urgent_switch.map((priority, index) => {
               return (
                 <calcite-segmented-control-item
                   {...(urgentType === priority ? { checked: true } : {})}
@@ -359,14 +354,14 @@ const LotChart = () => {
 
       <div
         style={{
-          color: dates?.daysPass === true ? "red" : "gray",
+          color: "gray",
           fontSize: `${new_asofDateSize}px`,
           float: "right",
           marginRight: "5px",
           marginTop: "5px",
         }}
       >
-        {!dates?.asOfDate ? "" : "As of " + dates?.asOfDate}
+        {asofdate ? `As of ${asofdate}` : `As of `}
       </div>
 
       {/* Lot Chart */}

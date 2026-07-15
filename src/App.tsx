@@ -4,7 +4,7 @@ import MapDisplay from "./components/MapDisplay";
 import ActionPanel from "./components/ActionPanel";
 import Header from "./components/Header";
 import ChartMain from "./components/ChartMain";
-import { contractPackage } from "./uniqueValues";
+import { cpackages } from "./uniqueValues";
 import UndergroundSwitch from "./components/UndergroundSwitch";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { authenticate } from "./autho";
@@ -17,7 +17,7 @@ export function App(): React.JSX.Element {
     authenticate(setLoggedInState, "mrnZvYTJlFwv0v1n"); // appId
   }, []);
 
-  const [cpackage, setCpackage] = useState<any>(contractPackage[0]);
+  const [cpackage, setCpackage] = useState<any>(cpackages[0]);
   const [utilityLinestats, setUtilityLinestats] = useState<any>();
 
   const updateCpackage = (newContractpackage: any) => {

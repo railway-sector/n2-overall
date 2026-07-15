@@ -1,22 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable no-unsafe-optional-chaining */
-import { dateTable, lotLayer } from "./layers";
-import StatisticDefinition from "@arcgis/core/rest/support/StatisticDefinition";
-import {
-  lotHandedOverAreaField,
-  lotHandedOverField,
-  affectedAreaField,
-  cpField,
-} from "./uniqueValues";
-import Collection from "@arcgis/core/core/Collection";
-import ActionButton from "@arcgis/core/support/actions/ActionButton";
-import { ngcp_tagged_structureLayer } from "./layers";
-import type { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
-import type { statisticsType } from "./uniqueValues";
-import Query from "@arcgis/core/rest/support/Query";
 
-const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+import { dateTable } from "./layers";
+import StatisticDefinition from "@arcgis/core/rest/support/StatisticDefinition";
+import { lot_ho_f, cp_f, lot_status_f } from "./uniqueValues";
+import type { statisticsType } from "./interfaceKeys";
+import Query from "@arcgis/core/rest/support/Query";
+import QueryExpressionLayers from "query-layers-expression";
+import type FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 
 //---------------------------------------------------------//
 //                 Add Layers to Map                      //
@@ -32,36 +24,32 @@ export function addLayersToMap(map: any, layersList: any[]) {
 //--------------------------------//
 export function yearMonthDay(date: Date) {
   return {
-    year: date.getFullYear(),
-    month: date.getMonth() + 1,
-    day: date.getDate(),
+    year: date?.getFullYear() ?? 0,
+    month: date?.getMonth() + 1,
+    day: date?.getDate(),
   };
 }
 
-// Updat date
-export async function dateUpdate(category: any) {
+export function toAsofdate(date: Date) {
+  //--- Return displayed date: (as of date)
+  const { year, day } = yearMonthDay(date);
+  const cmonth = date?.toLocaleString("en-US", { month: "long" });
+
+  return year <= 1970 ? "" : `${cmonth} ${day}, ${year}`;
+}
+
+export async function dateUpdate(category: string) {
+  //--- Only executed during an initial render
   const query = dateTable.createQuery();
-  query.where = `project = 'N2' AND category = '${category}'`; // "project = 'N2'" + ' AND ' + "category = 'Land Acquisition'";
+  query.where = `project = 'N2' AND category = '${category}'`;
 
-  const response = await dateTable.queryFeatures(query);
-  const dates = response.features.map((result: any) => {
-    // get today and date recorded in the table
-    const today = new Date();
-    const date = new Date(result.attributes.date);
+  const { features } = await dateTable.queryFeatures(query);
+  return features.map(({ attributes }: any) => {
+    const date = new Date(attributes.date);
+    const asofdate = toAsofdate(date);
 
-    // Calculate the number of days passed since the last update
-    const time_passed = today.getTime() - date.getTime();
-    const days_passed = Math.round(time_passed / (1000 * 3600 * 24));
-
-    const year = yearMonthDay(date).year;
-    const month = date.toLocaleString("en-US", {
-      month: "long",
-    });
-    const day = date.getDate();
-    const as_of_date = year < 1990 ? "" : `${month} ${day}, ${year}`;
-    return [as_of_date, days_passed, date];
+    return asofdate;
   });
-  return dates;
 }
 
 //---------------------------------------------//
@@ -125,6 +113,225 @@ export async function fieldStatistic({
   });
 }
 
+//--- Chart Render helper function
+// `pieChartRender` function helps to assign parameter names to class `ChartPieSeriesRender`
+interface PieChartRenderType {
+  render: any | null; // the first instance of new ChartPieSeriesRender
+  chart: any; // amChart
+  pieSeries: any;
+  legend: any;
+  root: any;
+  qChart: any;
+  q2Expression?: any;
+  status_field: any;
+  view: any;
+  updateChartPanelwidth: any;
+  data: any;
+  seriesScale: any;
+  innerLabel?: any;
+  innerLabelFontSize?: any;
+  innerValueFontSize?: any;
+  layer: FeatureLayer | any;
+  statusArray: StatusQueryItem[];
+  bkg_color_switch?: boolean;
+  seriesFillHash?: boolean;
+}
+
+interface StatusQueryItem {
+  category: string;
+  value: number | string;
+  color: string;
+}
+
+export async function PieChartRenderType({
+  render,
+  chart,
+  pieSeries,
+  legend,
+  root,
+  qChart,
+  q2Expression,
+  status_field,
+  view,
+  updateChartPanelwidth,
+  data,
+  seriesScale,
+  innerLabel,
+  innerLabelFontSize,
+  innerValueFontSize,
+  layer,
+  statusArray,
+  bkg_color_switch,
+  seriesFillHash,
+}: PieChartRenderType) {
+  render.chart = chart;
+  render.pieSeries = pieSeries;
+  render.legend = legend;
+  render.root = root;
+  render.qChart = qChart;
+  render.q2Expression = q2Expression;
+  render.status_field = status_field;
+  render.view = view;
+  render.updateChartPanelwidth = updateChartPanelwidth;
+  render.data = data;
+  render.seriesScale = seriesScale;
+  render.innerLabel = innerLabel;
+  render.innerLabelFontSize = innerLabelFontSize;
+  render.innerValueFontSize = innerValueFontSize;
+  render.layer = layer;
+  render.statusArray = statusArray;
+  render.bkg_color_switch = bkg_color_switch;
+  render.seriesFillHash = seriesFillHash;
+
+  return await render.chartDataRenderer();
+}
+
+//--- Returns query expression
+export const makeQuery = (
+  qValues: string[],
+  qFields: string[],
+  qExpression?: string,
+  q2Expression?: string,
+) => {
+  const q = new QueryExpressionLayers();
+  q.qValues = qValues;
+  q.qFields = qFields;
+  if (qExpression) q.qExpression = qExpression;
+  if (q2Expression) q.q2Expression = q2Expression;
+  return q;
+};
+
+//---------------------------------------------//
+//               Stack Columns                 //
+//---------------------------------------------//
+interface StackColumnChartDataType {
+  colchart: any;
+  qChart: any;
+  categoryTypes: any;
+  categoryTypeField: any;
+  layers: any;
+  statusField: any;
+  statusState: any;
+}
+
+export async function stackColumnChartData({
+  colchart,
+  qChart,
+  categoryTypes,
+  categoryTypeField,
+  layers,
+  statusField,
+  statusState,
+}: StackColumnChartDataType) {
+  colchart.qChart = qChart.queryExpression();
+  colchart.categoryTypes = categoryTypes;
+  colchart.categoryTypeField = categoryTypeField;
+  colchart.layers = layers;
+  colchart.statusField = statusField;
+  colchart.statusState = statusState;
+
+  return await colchart.chartDataStackColumns();
+}
+
+type StatusTypeNamesType =
+  | "To be Constructed"
+  | "Under Construction"
+  | "delayed"
+  | "Completed"
+  | "Exceeded"
+  | "Normal";
+
+type StatusStateType =
+  | "comp"
+  | "incomp"
+  | "ongoing"
+  | "delayed"
+  | "exceeded"
+  | "normal";
+
+interface ChartStackColumnRender {
+  render: any;
+  revit: boolean;
+  layers: any;
+  root: any;
+  chart: any;
+  data: any;
+  buildingLayer?: any;
+  qChart: any;
+  chartCategoryTypes: any;
+  chartCategoryTypeField: any;
+  statusTypename: StatusTypeNamesType[];
+  statusStatename: StatusStateType[];
+  statusArray: any;
+  statusField: any;
+  seriesStatusColor: any;
+  strokeColor: any;
+  strokeWidth: any;
+  view: any;
+  setLayerViewFilter?: any;
+  new_chartIconSize: any;
+  new_axisFontSize: any;
+  chartIconPositionX?: any;
+  chartPaddingRightIconLabel: any;
+  legend: any;
+  updateChartPanelwidth: any;
+}
+
+export async function stackColumnChartRender({
+  render,
+  revit,
+  layers,
+  root,
+  chart,
+  data,
+  buildingLayer,
+  qChart,
+  chartCategoryTypes,
+  chartCategoryTypeField,
+  statusTypename,
+  statusStatename,
+  statusArray,
+  statusField,
+  seriesStatusColor,
+  strokeColor,
+  strokeWidth,
+  view,
+  setLayerViewFilter,
+  new_chartIconSize,
+  new_axisFontSize,
+  chartIconPositionX,
+  chartPaddingRightIconLabel,
+  legend,
+  updateChartPanelwidth,
+}: ChartStackColumnRender) {
+  render.revit = revit;
+  render.layers = layers;
+  render.root = root;
+  render.chart = chart;
+  render.data = data;
+  render.buildingLayer = buildingLayer;
+  render.qChart = qChart;
+  render.chartCategoryTypes = chartCategoryTypes;
+  render.chartCategoryTypeField = chartCategoryTypeField;
+  render.statusTypename = statusTypename;
+  render.statusStatename = statusStatename;
+  render.statusArray = statusArray;
+  render.statusField = statusField;
+  render.seriesStatusColor = seriesStatusColor;
+  render.strokeColor = strokeColor;
+  render.strokeWidth = strokeWidth;
+  render.view = view;
+  render.setLayerViewFilter = setLayerViewFilter;
+  render.new_chartIconSize = new_chartIconSize;
+  render.new_axisFontSize = new_axisFontSize;
+  render.chartIconPositionX = chartIconPositionX;
+  render.chartPaddingRightIconLabel = chartPaddingRightIconLabel;
+  render.legend = legend;
+  render.updateChartPanelwidth = updateChartPanelwidth;
+
+  return await render.chartRendererColumn();
+}
+
 //---------------------------------------------//
 //           Lot (handed over area)            //
 //---------------------------------------------//
@@ -155,7 +362,7 @@ export async function handedOverAreaByContractp({
       });
 
       const query = layer.createQuery();
-      query.where = `CP = '${cp}' AND ${cpField} IS NOT NULL`;
+      query.where = `CP = '${cp}' AND ${cp_f} IS NOT NULL`;
       query.outStatistics = [aa, hoa];
 
       const response = await layer?.queryFeatures(query);
@@ -171,173 +378,19 @@ export async function handedOverAreaByContractp({
 }
 
 //---------------------------------------------//
-//               Stack Columns                 //
+//                  Highlight Lot              //
 //---------------------------------------------//
-interface stackColumnsDataType {
-  stackchart: any;
-  qChart: any;
-  categoryTypes: any;
-  categoryTypeField: any;
-  layers: any;
-  statusField: any;
-  statusState: any;
-}
-
-export async function stackColumnsChartData({
-  stackchart,
-  qChart,
-  categoryTypes,
-  categoryTypeField,
-  layers,
-  statusField,
-  statusState,
-}: stackColumnsDataType) {
-  stackchart.qChart = qChart.queryExpression();
-  stackchart.categoryTypes = categoryTypes;
-  stackchart.categoryTypeField = categoryTypeField;
-  stackchart.layers = layers;
-  stackchart.statusField = statusField;
-  stackchart.statusState = statusState;
-
-  return await stackchart.chartDataStackColumns();
-}
-
-//---------------------------------------------//
-//           Land, Structure, NLO              //
-//---------------------------------------------//
-export async function generateHandedOverAreaData() {
-  const total_affected_area = new StatisticDefinition({
-    onStatisticField: affectedAreaField,
-    outStatisticFieldName: "total_affected_area",
-    statisticType: "sum",
-  });
-
-  const total_handedover_area = new StatisticDefinition({
-    onStatisticField: lotHandedOverAreaField,
-    outStatisticFieldName: "total_handedover_area",
-    statisticType: "sum",
-  });
-
-  const query = lotLayer.createQuery();
-  query.where = `${cpField} IS NOT NULL`;
-  query.outStatistics = [total_affected_area, total_handedover_area];
-  query.orderByFields = [cpField];
-  query.groupByFieldsForStatistics = [cpField];
-
-  return lotLayer.queryFeatures(query).then((response: any) => {
-    const stats = response.features;
-    const data = stats.map((result: any) => {
-      const attributes = result.attributes;
-      const affected = attributes.total_affected_area;
-      const handedOver = attributes.total_handedover_area;
-      const cp = attributes.CP;
-
-      const percent = ((handedOver / affected) * 100).toFixed(0);
-
-      return Object.assign(
-        {},
-        {
-          category: cp,
-          value: percent,
-        },
-      );
-    });
-
-    return data;
-  });
-}
-
-export const dateFormat = (inputDate: any, format: any) => {
-  //parse the input date
-  const date = new Date(inputDate);
-
-  //extract the parts of the date
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-
-  //replace the month
-  format = format.replace("MM", month.toString().padStart(2, "0"));
-
-  //replace the year
-  if (format.indexOf("yyyy") > -1) {
-    format = format.replace("yyyy", year.toString());
-  } else if (format.indexOf("yy") > -1) {
-    format = format.replace("yy", year.toString().substr(2, 2));
-  }
-
-  //replace the day
-  format = format.replace("dd", day.toString().padStart(2, "0"));
-
-  return format;
-};
-
-//---------------------------------------------//
-//                  Other Tools                //
-//---------------------------------------------//
-
-// Thousand separators function
-export function thousands_separators(num: any) {
-  if (num) {
-    const num_parts = num.toString().split(".");
-    num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return num_parts.join(".");
-  }
-}
-
-export function zoomToLayer(layer: any, view: any) {
-  return layer.queryExtent().then((response: any) => {
-    view
-      ?.goTo(response.extent, {
-        //response.extent
-        speedFactor: 2,
-      })
-      .catch((error: any) => {
-        if (error.name !== "AbortError") {
-          console.error(error);
-        }
-      });
-  });
-}
-
-export function highlightHandedOverLot(layer: any, view: any) {
-  view?.whenLayerView(layer).then((urgentLayerView: any) => {
-    const query = layer.createQuery();
-    query.where = `${lotHandedOverField} = 1`;
-    layer.queryFeatures(query).then((results: any) => {
-      const length = results.features.length;
-      const objID = [];
-      for (let i = 0; i < length; i++) {
-        const obj = results.features[i].attributes.OBJECTID;
-        objID.push(obj);
-      }
-
-      if (highlight) {
-        highlight.remove();
-      }
-      highlight = urgentLayerView.highlight(objID);
-    });
-  });
-}
-
 let highlight: any;
-export function highlightLot(layer: any, view: any) {
-  view?.whenLayerView(layer).then((urgentLayerView: any) => {
-    const query = layer.createQuery();
-    layer.queryFeatures(query).then((results: any) => {
-      const length = results.features.length;
-      const objID = [];
-      for (let i = 0; i < length; i++) {
-        const obj = results.features[i].attributes.OBJECTID;
-        objID.push(obj);
-      }
+export async function highlightLot(layer: any, view: any) {
+  const query = layer.createQuery();
 
-      if (highlight) {
-        highlight.remove();
-      }
-      highlight = urgentLayerView.highlight(objID);
-    });
-  });
+  const layerView = await view?.whenLayerView(layer);
+  const results = await layer?.queryObjectIds(query);
+
+  if (highlight) {
+    highlight.remove();
+  }
+  highlight = layerView?.highlight(results);
 }
 
 export function highlightRemove() {
@@ -346,89 +399,50 @@ export function highlightRemove() {
   }
 }
 
-export function defineActions(event: any) {
-  const { item } = event;
-  if (item.title === "Sapang Balen River Realignment") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-sapangbalenriver",
-        }),
-      ]),
-    ]);
+export async function highlightHandedOverLot(layer: any, view: any) {
+  const query = layer.createQuery();
+  query.where = `${lot_ho_f} = 1 AND ${lot_status_f} <> 8`;
+
+  const layerView = view?.whenLayerView(layer);
+  const results = await layer?.queryObjectIds(query);
+
+  if (highlight) {
+    highlight.remove();
   }
+  highlight = layerView.highlight(results);
+}
 
-  if (item.title === "NGCP Line") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-ngcpline",
-        }),
-      ]),
-    ]);
+//---------------------------------------------//
+//                  Other Tools                //
+//---------------------------------------------//
+export function thousands_separators(num: any) {
+  if (num) {
+    const num_parts = num.toString().split(".");
+    num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return num_parts.join(".");
+  } else {
+    return 0;
   }
+}
 
-  if (item.title === "NGCP Pole Relocation Working Area") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-ngcpworkarea",
-        }),
-      ]),
-    ]);
-  }
+//--- Zoom to Layer
+// const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+export function zoomToLayer(layer: any, view: any) {
+  return layer.queryExtent().then((response: any) => {
+    view?.goTo(response.extent, { speedFactor: 2 }).catch((error: any) => {
+      if (error.name !== "AbortError") {
+        console.error(error);
+      }
+    });
+  });
+}
 
-  if (item.title === "NGCP Pole Relocation Tagged Structures") {
-    item.actionsSections = new Collection([
-      new Collection([
-        new ActionButton({
-          title: "Zoom to Area",
-          icon: "zoom-in-fixed",
-          id: "full-extent-taggedstructure",
-        }),
-      ]),
-    ]);
-
-    highlightLot(ngcp_tagged_structureLayer, arcgisScene);
-  }
-
-  if (item.layer.type !== "group") {
-    item.panel = {
-      content: "legend",
-      open: true,
-    };
-  }
-
-  item.title === "Chainage" ||
-  item.title === "Temporary Fencing" ||
-  item.title === "Permanent Fencing" ||
-  item.title === "Maintenance Road" ||
-  item.title === "Drainage" ||
-  item.title === "Provision for Freight Line" ||
-  item.title === "Households" ||
-  item.title === "Households Ownership (Structure)" ||
-  item.title === "Occupancy (Structure)" ||
-  item.title === "Structure" ||
-  item.title === "NGCP Pole Relocation Working Area" ||
-  item.title === "NGCP Pole Relocation Tagged Structures" ||
-  item.title === "Land Acquisition (Endorsed Status)" ||
-  item.title === "Super Urgent Lot" ||
-  item.title === "Handed-Over (public + private)" ||
-  item.title === "Tree Cutting & Compensation" ||
-  item.title === "Point (symbol)" ||
-  item.title === "Point (status)" ||
-  item.title === "Line (symbol)" ||
-  item.title === "Line (status)" ||
-  item.title === "Pier Head/Column" ||
-  item.title === "Viaduct" ||
-  item.title === "MERALCO TSS 10" ||
-  item.title === "Station Structures"
-    ? (item.visible = false)
-    : (item.visible = true);
+//--- Zoom to fullExtet
+export function zoomToFullExtent(layer: any, view: any) {
+  layer.fullExtent &&
+    view?.goTo(layer.fullExtent).catch((error: any) => {
+      if (error.name !== "AbortError") {
+        console.error(error);
+      }
+    });
 }
