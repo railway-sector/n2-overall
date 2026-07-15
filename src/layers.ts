@@ -717,6 +717,14 @@ const meralco_tss_renderer = new SimpleRenderer({
   }),
 });
 
+const lot_meralco_tss_lot_renderer = new SimpleRenderer({
+  symbol: new SimpleLineSymbol({
+    color: "#f10861",
+    width: "3px",
+    style: "short-dash",
+  }),
+});
+
 export const Meralco_tss10_layer = new FeatureLayer({
   portalItem: {
     id: "d5c43ca76b9a475e954e9c3d3595e2af",
@@ -724,7 +732,7 @@ export const Meralco_tss10_layer = new FeatureLayer({
       url: "https://gis.railway-sector.com/portal",
     },
   },
-  renderer: meralco_tss_renderer,
+  renderer: lot_meralco_tss_lot_renderer,
   title: "Additional Area for MERALCO TSS 10",
   minScale: 150000,
   maxScale: 0,
