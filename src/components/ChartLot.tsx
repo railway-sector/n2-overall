@@ -47,6 +47,8 @@ import ChartPieSeries from "chart-pie-series";
 const LotChart = () => {
   const { cpackage } = use(MyContext);
   const arcgisScene = document.querySelector("arcgis-scene");
+
+  const firstLoad = useRef<boolean>(true);
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const [urgentType, setUrgentType] = useState<any>("OFF");
 
@@ -124,7 +126,11 @@ const LotChart = () => {
       //--- Handed-Over percent
       const perc_ho = Number(((total_ho / totaln) * 100).toFixed(0));
 
-      zoomToLayer(lotLayer, arcgisScene);
+      //--- Only zoom on subsequent (non-initial) fetches
+      if (!firstLoad.current) {
+        zoomToLayer(lotLayer, arcgisScene);
+      }
+      firstLoad.current = false;
 
       return {
         chartData: chartData[0] || [],
