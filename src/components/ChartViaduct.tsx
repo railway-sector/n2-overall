@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useRef, useState, use, memo } from "react";
 import { pierAccessLayer, viaductLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
@@ -30,7 +30,7 @@ import {
 import ChartStackColumns from "chart-stack-column";
 
 // Draw chart
-const ChartViaduct = () => {
+const ChartViaduct = memo(() => {
   const { cpackage } = use(MyContext);
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
@@ -241,6 +241,6 @@ const ChartViaduct = () => {
       ></div>
     </>
   );
-};
+});
 
 export default ChartViaduct;

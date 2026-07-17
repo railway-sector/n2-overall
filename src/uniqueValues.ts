@@ -33,15 +33,10 @@ const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
 //----------------------------------------------//
 //              portalItem                      //
 //----------------------------------------------//
-const portalItem_url = {
-  url: "https://gis.railway-sector.com/portal",
-};
+const portalItem_url = { url: "https://gis.railway-sector.com/portal" };
 
 export const portalItems = (id: any) => {
-  return {
-    id: id,
-    portal: portalItem_url,
-  };
+  return { id: id, portal: portalItem_url };
 };
 
 export const cpackages = ["All", "N-01", "N-02", "N-03", "N-04"];
@@ -337,7 +332,7 @@ export const rgb = [
   [255, 170, 0, 0.6],
   [255, 83, 73, 0.6],
   [178, 190, 181, 0.6],
-  [255, 0, 0, 0.6],
+  [111, 0, 0, 0.6],
 ];
 
 export const str_status_q = [
@@ -376,7 +371,7 @@ export const str_status_q = [
   {
     value: 8,
     category: "For Expropriation",
-    color: "#FF0000",
+    color: "#6f0000",
     colrgb: rgb[7],
   },
 ];
@@ -532,7 +527,7 @@ export const nlo_status_q = [
   {
     value: 6,
     category: "For Notice of Taking",
-    color: "#FF0000",
+    color: "#6f0000",
     logo: nlo_status_symbol[5],
   },
 ];

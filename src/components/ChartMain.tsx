@@ -21,6 +21,11 @@ import ChartUtilityLine from "./ChartUtilityLine";
 function ChartMain() {
   const [panelWidth, setPanelWidth] = useState<string>("40%");
   const [panelHeader, setPanelHeader] = useState<string>("Chart");
+  const [tabName, setTabName] = useState<string>("Land");
+
+  const handleTabChange = (event: any) => {
+    setTabName(event.target.selectedTitle.textContent);
+  };
 
   const handlePanelCollapse = (event: any) => {
     const collapse_state = event.target.collapsed;
@@ -53,15 +58,13 @@ function ChartMain() {
           borderColor: "#555555",
           width: panelWidth,
           overflowY: "auto",
-          display: "block", // without adding display, background will not disappear.
+          display: "block",
           scrollbarWidth: "none",
         }}
-        // oncalcitePanelCollapse={handlePanelCollapse}
         onClick={handlePanelCollapse}
       >
         <calcite-tabs
           style={{
-            // borderStyle: "solid",
             borderRightWidth: 1,
             borderLeftWidth: 1,
             borderBottomWidth: 1,
@@ -71,17 +74,17 @@ function ChartMain() {
           layout="center"
           scale="m"
         >
-          <calcite-tab-nav slot="title-group" id="thetabs">
-            <calcite-tab-title className="Land">Land</calcite-tab-title>
-            <calcite-tab-title className="Structure">
-              Structure
-            </calcite-tab-title>
-            <calcite-tab-title className="Households">
-              Households
-            </calcite-tab-title>
-            <calcite-tab-title className="Households">Tree</calcite-tab-title>
-            <calcite-tab-title className="Utility">Utility</calcite-tab-title>
-            <calcite-tab-title className="Viaduct">Viaduct</calcite-tab-title>
+          <calcite-tab-nav
+            slot="title-group"
+            id="thetabs"
+            oncalciteTabChange={handleTabChange}
+          >
+            <calcite-tab-title>Land</calcite-tab-title>
+            <calcite-tab-title>Structure</calcite-tab-title>
+            <calcite-tab-title>Households</calcite-tab-title>
+            <calcite-tab-title>Tree</calcite-tab-title>
+            <calcite-tab-title>Utility</calcite-tab-title>
+            <calcite-tab-title>Viaduct</calcite-tab-title>
           </calcite-tab-nav>
 
           {/* CalciteTab: Lot */}
@@ -91,30 +94,34 @@ function ChartMain() {
 
           {/* CalciteTab: Structure */}
           <calcite-tab>
-            <ChartStructure />
+            {tabName === "Structure" && <ChartStructure />}
           </calcite-tab>
 
           {/* CalciteTab: Non-Land Owner */}
-          <calcite-tab>
-            <ChartNlo />
-          </calcite-tab>
+          <calcite-tab>{tabName === "Households" && <ChartNlo />}</calcite-tab>
 
           {/* CalciteTab: Tree Cutting & Compensation */}
           <calcite-tab>
-            <ChartTreeCutting />
-            <ChartTreeCompensation />
+            {tabName === "Tree" && (
+              <>
+                <ChartTreeCutting />
+                <ChartTreeCompensation />
+              </>
+            )}
+          </calcite-tab>
+
+          {/* CalciteTab: Utility */}
+          <calcite-tab>
+            {tabName === "Utility" && (
+              <>
+                <ChartUtilityPoint />
+                <ChartUtilityLine />
+              </>
+            )}
           </calcite-tab>
 
           {/* CalciteTab: Viaduct */}
-          <calcite-tab>
-            <ChartUtilityPoint />
-            <ChartUtilityLine />
-          </calcite-tab>
-
-          {/* CalciteTab: Viaduct */}
-          <calcite-tab>
-            <ChartViaduct />
-          </calcite-tab>
+          <calcite-tab>{tabName === "Viaduct" && <ChartViaduct />}</calcite-tab>
         </calcite-tabs>
       </calcite-panel>
     </>

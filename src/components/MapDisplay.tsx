@@ -26,10 +26,12 @@ import {
 import type { ArcgisSearch } from "@arcgis/map-components/components/arcgis-search";
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils";
 import { addLayersToMap } from "../query";
+import { useState } from "react";
 
 export default function MapDisplay() {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const arcgisSearch = document.querySelector("arcgis-search") as ArcgisSearch;
+  const [_mapView, setMapView] = useState<any>();
 
   reactiveUtils.watch(
     () => viaductLayer.visible,
@@ -78,6 +80,9 @@ export default function MapDisplay() {
         viewingMode="local"
         center="120.5793, 15.18"
         zoom={10}
+        onarcgisViewReadyChange={(event: any) => {
+          setMapView(event.target);
+        }}
       >
         <arcgis-compass slot="top-right"></arcgis-compass>
         <arcgis-expand close-on-esc slot="top-right" mode="floating">

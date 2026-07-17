@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useRef, useState, use, memo } from "react";
 import { treeCompensationLayer } from "../layers";
 import { cp_f, treem_status_f, treem_status_q } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
@@ -17,7 +17,7 @@ import { makeQuery, pieChartData, PieChartRenderType } from "../query";
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
 
-const ChartTreeCompensation = () => {
+const ChartTreeCompensation = memo(() => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [_chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
@@ -139,6 +139,6 @@ const ChartTreeCompensation = () => {
       ></div>
     </>
   );
-};
+});
 
 export default ChartTreeCompensation;

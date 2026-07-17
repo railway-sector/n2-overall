@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useRef, useState, use, memo } from "react";
 import { utilityPointLayer, utilityPointLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
@@ -30,7 +30,7 @@ import ChartStackColumnRender from "chart-stack-column-render";
 import ChartStackColumns from "chart-stack-column";
 
 // Draw chart
-const ChartUtilityPoint = () => {
+const ChartUtilityPoint = memo(() => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage, utilityLinestats } = use(MyContext);
@@ -256,6 +256,6 @@ const ChartUtilityPoint = () => {
       ></div>
     </>
   );
-};
+});
 
 export default ChartUtilityPoint;

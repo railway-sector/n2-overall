@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useRef, useState, use, memo } from "react";
 import { treeCuttingLayer } from "../layers";
 import {
   thousands_separators,
@@ -29,7 +29,7 @@ import {
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
 
-const ChartTreeCutting = () => {
+const ChartTreeCutting = memo(() => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
@@ -218,6 +218,6 @@ const ChartTreeCutting = () => {
       ></div>
     </>
   );
-};
+});
 
 export default ChartTreeCutting;
