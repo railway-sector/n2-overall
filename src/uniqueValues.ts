@@ -1166,11 +1166,11 @@ export const treem_renderer = new UniqueValueRenderer({
 //--- Utility Fields
 export const util_status_f = "Status";
 export const util_type_f = "UtilType";
-export const util_comp_f = "Comp_Agency";
 export const util_remark_f = "Remarks";
 export const util_id_f = "Id";
 export const util_layer_f = "LAYER";
 export const util_height_f = "Height";
+export const util_minScale = 25000;
 
 export const util_type_icons = [
   "https://EijiGorilla.github.io/Symbols/Telecom_Logo2.svg",
@@ -1489,7 +1489,6 @@ const utilp2_text_symbol = utilLabelSymbol3D({
 export const utilp2_label = new LabelClass({
   labelPlacement: "above-center",
   labelExpressionInfo: {
-    //value: "{Company}",
     expression:
       "When($feature.Status >= 0, DomainName($feature, 'Comp_Agency'), '')", //$feature.Comp_Agency
   },
