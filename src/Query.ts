@@ -42,6 +42,7 @@ export async function dateUpdate(category: string) {
   //--- Only executed during an initial render
   const query = new Query({
     where: `project = 'N2' AND category = '${category}'`,
+    outFields: ["project", "category", "date"],
   });
 
   const { features } = await dateTable.queryFeatures(query);
@@ -308,12 +309,12 @@ export async function highlightLot({
   qe?: any;
 }) {
   const query = new Query({
-    where: qe ?? null,
+    where: qe ?? "",
   });
 
   const [layerView, results] = await Promise.all([
-    await view?.whenLayerView(layer),
-    await layer?.queryObjectIds(query),
+    view?.whenLayerView(layer),
+    layer?.queryObjectIds(query),
   ]);
 
   highlight?.remove();
