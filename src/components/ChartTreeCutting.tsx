@@ -5,7 +5,7 @@ import {
   dateUpdate,
   pieChartData,
   makeQuery,
-  PieChartRenderType,
+  PieChartRender,
 } from "../query";
 import {
   cp_f,
@@ -120,7 +120,7 @@ const ChartTreeCutting = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    PieChartRenderType({
+    PieChartRender({
       render: new ChartPieSeriesRender(),
       chart,
       pieSeries: pieSeries,

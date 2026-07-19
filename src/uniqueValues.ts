@@ -1838,7 +1838,7 @@ export function defineActions(event: any) {
   if (item.title === "NGCP Pole Relocation Tagged Structures") {
     item.actionsSections = zoomToAction("full-extent-taggedstructure");
 
-    highlightLot(ngcp_tagged_structureLayer, arcgisScene);
+    highlightLot({ layer: ngcp_tagged_structureLayer, view: arcgisScene });
   }
 
   if (item.layer.type !== "group") {

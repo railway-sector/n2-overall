@@ -4,7 +4,7 @@
 
 import { dateTable } from "./layers";
 import StatisticDefinition from "@arcgis/core/rest/support/StatisticDefinition";
-import { lot_ho_f, cp_f, lot_status_f } from "./uniqueValues";
+import { cp_f } from "./uniqueValues";
 import type { statisticsType } from "./interfaceKeys";
 import Query from "@arcgis/core/rest/support/Query";
 import QueryExpressionLayers from "query-layers-expression";
@@ -40,13 +40,13 @@ export function toAsofdate(date: Date) {
 
 export async function dateUpdate(category: string) {
   //--- Only executed during an initial render
-  const query = dateTable.createQuery();
-  query.where = `project = 'N2' AND category = '${category}'`;
+  const query = new Query({
+    where: `project = 'N2' AND category = '${category}'`,
+  });
 
   const { features } = await dateTable.queryFeatures(query);
   return features.map(({ attributes }: any) => {
-    const date = new Date(attributes.date);
-    const asofdate = toAsofdate(date);
+    const asofdate = toAsofdate(new Date(attributes.date));
 
     return asofdate;
   });
@@ -74,12 +74,14 @@ export async function pieChartData({
   statisticField,
   statisticType,
 }: pieChartDataType) {
-  piechart.qChart = qChart.queryExpression();
-  piechart.layer = layer;
-  piechart.statusList = statusList;
-  piechart.statusField = statusField;
-  piechart.statisticField = statisticField;
-  piechart.statisticType = statisticType;
+  Object.assign(piechart, {
+    qChart: qChart.queryExpression(),
+    layer,
+    statusList,
+    statusField,
+    statisticField,
+    statisticType,
+  });
 
   return await piechart.chartDataPieSeries();
 }
@@ -97,16 +99,16 @@ export async function fieldStatistic({
   statisticField,
   statisticType,
 }: fieldStatisticType) {
-  const statsCollect = new StatisticDefinition({
-    onStatisticField: statisticField,
-    outStatisticFieldName: "statsCollect",
-    statisticType: statisticType,
+  const query = new Query({
+    where: qChart,
+    outStatistics: [
+      new StatisticDefinition({
+        onStatisticField: statisticField,
+        outStatisticFieldName: "statsCollect",
+        statisticType,
+      }),
+    ],
   });
-
-  //--- Query
-  const query = new Query();
-  query.outStatistics = [statsCollect];
-  query.where = qChart;
 
   return layer?.queryFeatures(query).then((response: any) => {
     return response.features[0].attributes.statsCollect;
@@ -143,46 +145,9 @@ interface StatusQueryItem {
   color: string;
 }
 
-export async function PieChartRenderType({
-  render,
-  chart,
-  pieSeries,
-  legend,
-  root,
-  qChart,
-  q2Expression,
-  status_field,
-  view,
-  updateChartPanelwidth,
-  data,
-  seriesScale,
-  innerLabel,
-  innerLabelFontSize,
-  innerValueFontSize,
-  layer,
-  statusArray,
-  bkg_color_switch,
-  seriesFillHash,
-}: PieChartRenderType) {
-  render.chart = chart;
-  render.pieSeries = pieSeries;
-  render.legend = legend;
-  render.root = root;
-  render.qChart = qChart;
-  render.q2Expression = q2Expression;
-  render.status_field = status_field;
-  render.view = view;
-  render.updateChartPanelwidth = updateChartPanelwidth;
-  render.data = data;
-  render.seriesScale = seriesScale;
-  render.innerLabel = innerLabel;
-  render.innerLabelFontSize = innerLabelFontSize;
-  render.innerValueFontSize = innerValueFontSize;
-  render.layer = layer;
-  render.statusArray = statusArray;
-  render.bkg_color_switch = bkg_color_switch;
-  render.seriesFillHash = seriesFillHash;
-
+export async function PieChartRender({ render, ...props }: PieChartRenderType) {
+  // render.chart = chart, render.legend = legend,....
+  Object.assign(render, props);
   return await render.chartDataRenderer();
 }
 
@@ -223,13 +188,14 @@ export async function stackColumnChartData({
   statusField,
   statusState,
 }: StackColumnChartDataType) {
-  colchart.qChart = qChart.queryExpression();
-  colchart.categoryTypes = categoryTypes;
-  colchart.categoryTypeField = categoryTypeField;
-  colchart.layers = layers;
-  colchart.statusField = statusField;
-  colchart.statusState = statusState;
-
+  Object.assign(colchart, {
+    qChart: qChart.queryExpression(),
+    categoryTypes,
+    categoryTypeField,
+    layers,
+    statusField,
+    statusState,
+  });
   return await colchart.chartDataStackColumns();
 }
 
@@ -279,56 +245,9 @@ interface ChartStackColumnRender {
 
 export async function stackColumnChartRender({
   render,
-  revit,
-  layers,
-  root,
-  chart,
-  data,
-  buildingLayer,
-  qChart,
-  chartCategoryTypes,
-  chartCategoryTypeField,
-  statusTypename,
-  statusStatename,
-  statusArray,
-  statusField,
-  seriesStatusColor,
-  strokeColor,
-  strokeWidth,
-  view,
-  setLayerViewFilter,
-  new_chartIconSize,
-  new_axisFontSize,
-  chartIconPositionX,
-  chartPaddingRightIconLabel,
-  legend,
-  updateChartPanelwidth,
+  ...props
 }: ChartStackColumnRender) {
-  render.revit = revit;
-  render.layers = layers;
-  render.root = root;
-  render.chart = chart;
-  render.data = data;
-  render.buildingLayer = buildingLayer;
-  render.qChart = qChart;
-  render.chartCategoryTypes = chartCategoryTypes;
-  render.chartCategoryTypeField = chartCategoryTypeField;
-  render.statusTypename = statusTypename;
-  render.statusStatename = statusStatename;
-  render.statusArray = statusArray;
-  render.statusField = statusField;
-  render.seriesStatusColor = seriesStatusColor;
-  render.strokeColor = strokeColor;
-  render.strokeWidth = strokeWidth;
-  render.view = view;
-  render.setLayerViewFilter = setLayerViewFilter;
-  render.new_chartIconSize = new_chartIconSize;
-  render.new_axisFontSize = new_axisFontSize;
-  render.chartIconPositionX = chartIconPositionX;
-  render.chartPaddingRightIconLabel = chartPaddingRightIconLabel;
-  render.legend = legend;
-  render.updateChartPanelwidth = updateChartPanelwidth;
-
+  Object.assign(render, props);
   return await render.chartRendererColumn();
 }
 
@@ -347,32 +266,30 @@ export async function handedOverAreaByContractp({
   cp_list,
   layer,
 }: HandedOverArea) {
+  const outStatistics = [
+    new StatisticDefinition({
+      onStatisticField: aa_field,
+      outStatisticFieldName: "aa",
+      statisticType: "sum",
+    }),
+    new StatisticDefinition({
+      onStatisticField: hoa_field,
+      outStatisticFieldName: "hoa",
+      statisticType: "sum",
+    }),
+  ];
   return await Promise.all(
     cp_list.map(async (cp: any) => {
-      const aa = new StatisticDefinition({
-        onStatisticField: aa_field,
-        outStatisticFieldName: "aa",
-        statisticType: "sum",
+      const query = new Query({
+        where: `CP = '${cp}' AND ${cp_f} IS NOT NULL`,
+        outStatistics: outStatistics,
       });
-
-      const hoa = new StatisticDefinition({
-        onStatisticField: hoa_field,
-        outStatisticFieldName: "hoa",
-        statisticType: "sum",
-      });
-
-      const query = layer.createQuery();
-      query.where = `CP = '${cp}' AND ${cp_f} IS NOT NULL`;
-      query.outStatistics = [aa, hoa];
 
       const response = await layer?.queryFeatures(query);
-      const attributes = response.features[0].attributes;
-      const perc = ((attributes.hoa / attributes.aa) * 100).toFixed(0);
+      const { aa, hoa } = response.features[0].attributes;
+      const value = aa ? ((hoa / aa) * 100).toFixed(0) : 0;
 
-      return {
-        category: cp,
-        value: perc ?? 0,
-      };
+      return { category: cp, value };
     }),
   );
 }
@@ -381,35 +298,30 @@ export async function handedOverAreaByContractp({
 //                  Highlight Lot              //
 //---------------------------------------------//
 let highlight: any;
-export async function highlightLot(layer: any, view: any) {
-  const query = layer.createQuery();
+export async function highlightLot({
+  layer,
+  view,
+  qe,
+}: {
+  layer: any;
+  view: any;
+  qe?: any;
+}) {
+  const query = new Query({
+    where: qe ?? null,
+  });
 
-  const layerView = await view?.whenLayerView(layer);
-  const results = await layer?.queryObjectIds(query);
+  const [layerView, results] = await Promise.all([
+    await view?.whenLayerView(layer),
+    await layer?.queryObjectIds(query),
+  ]);
 
-  if (highlight) {
-    highlight.remove();
-  }
-  highlight = layerView?.highlight(results);
+  highlight?.remove();
+  highlight = layerView && layerView.highlight(results);
 }
 
 export function highlightRemove() {
-  if (highlight) {
-    highlight.remove();
-  }
-}
-
-export async function highlightHandedOverLot(layer: any, view: any) {
-  const query = layer.createQuery();
-  query.where = `${lot_ho_f} = 1 AND ${lot_status_f} <> 8`;
-
-  const layerView = view?.whenLayerView(layer);
-  const results = await layer?.queryObjectIds(query);
-
-  if (highlight) {
-    highlight.remove();
-  }
-  highlight = layerView.highlight(results);
+  highlight?.remove();
 }
 
 //---------------------------------------------//

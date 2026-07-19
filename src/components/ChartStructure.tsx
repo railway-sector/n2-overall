@@ -3,7 +3,7 @@ import {
   dateUpdate,
   makeQuery,
   pieChartData,
-  PieChartRenderType,
+  PieChartRender,
   thousands_separators,
 } from "../query";
 import "../index.css";
@@ -125,7 +125,7 @@ const ChartStructure = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    PieChartRenderType({
+    PieChartRender({
       render: new ChartPieSeriesRender(),
       chart,
       pieSeries: pieSeries,

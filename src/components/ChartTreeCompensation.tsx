@@ -13,7 +13,7 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
-import { makeQuery, pieChartData, PieChartRenderType } from "../query";
+import { makeQuery, pieChartData, PieChartRender } from "../query";
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
 
@@ -94,7 +94,7 @@ const ChartTreeCompensation = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    PieChartRenderType({
+    PieChartRender({
       render: new ChartPieSeriesRender(),
       chart,
       pieSeries: pieSeries,

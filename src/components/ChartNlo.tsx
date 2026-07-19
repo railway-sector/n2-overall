@@ -4,7 +4,7 @@ import {
   dateUpdate,
   makeQuery,
   pieChartData,
-  PieChartRenderType,
+  PieChartRender,
   thousands_separators,
 } from "../query";
 import {
@@ -127,7 +127,7 @@ const ChartNlo = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    PieChartRenderType({
+    PieChartRender({
       render: new ChartPieSeriesRender(),
       chart,
       pieSeries: pieSeries,

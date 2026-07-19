@@ -7,7 +7,7 @@ import {
   highlightRemove,
   makeQuery,
   pieChartData,
-  PieChartRenderType,
+  PieChartRender,
   thousands_separators,
   zoomToLayer,
 } from "../query";
@@ -174,7 +174,7 @@ const LotChart = () => {
 
   useEffect(() => {
     urgentType === lot_urgent_switch[1]
-      ? highlightLot(lotLayer, arcgisScene)
+      ? highlightLot({ layer: lotLayer, view: arcgisScene, qe: urgent_qe })
       : highlightRemove();
   }, [urgentType]);
 
@@ -213,7 +213,7 @@ const LotChart = () => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    PieChartRenderType({
+    PieChartRender({
       render: new ChartPieSeriesRender(),
       chart,
       pieSeries: pieSeries,
