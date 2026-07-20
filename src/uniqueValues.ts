@@ -450,7 +450,7 @@ export const nlo_status_symbol = [
   "https://EijiGorilla.github.io/Symbols/3D_Web_Style/ISF/ISF_PaymentProcess.svg",
   "https://EijiGorilla.github.io/Symbols/3D_Web_Style/ISF/ISF_LegalPass.svg",
   "https://EijiGorilla.github.io/Symbols/3D_Web_Style/ISF/ISF_OtC.svg",
-  "https://EijiGorilla.github.io/Symbols/3D_Web_Style/ISF/ISF_LBP.svg",
+  "https://EijiGorilla.github.io/Symbols/3D_Web_Style/ISF/ISF_Notice_of_Taking.svg",
 ];
 
 export const nlo_status_q = [
