@@ -4,7 +4,7 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 //    Definition Expression using queryExpression          //
 //---------------------------------------------------------//
 interface queryDefinitionExpressionType {
-  queryExpression?: string;
+  queryExpression?: any;
   featureLayer?:
     | [FeatureLayer, FeatureLayer?, FeatureLayer?, FeatureLayer?, FeatureLayer?]
     | any;
@@ -14,19 +14,9 @@ export function queryDefinitionExpression({
   queryExpression,
   featureLayer,
 }: queryDefinitionExpressionType) {
-  if (queryExpression) {
-    if (featureLayer) {
-      if (Array.isArray(featureLayer)) {
-        featureLayer.forEach((layer) => {
-          if (layer) {
-            layer.definitionExpression = queryExpression;
-            // layer.visible = true;
-          }
-        });
-      } else {
-        featureLayer.definitionExpression = queryExpression;
-        // featureLayer.visible = true;
-      }
-    }
-  }
+  if (!queryExpression || !featureLayer) return;
+  const layers = Array.isArray(featureLayer) ? featureLayer : [featureLayer];
+  layers.forEach(
+    (layer: any) => layer && (layer.definitionExpression = queryExpression),
+  );
 }
