@@ -481,7 +481,7 @@ export const utilityLayers: any = {
 //                Viaduct Layer                 //
 //----------------------------------------------//
 export const viaductLayer = new SceneLayer({
-  portalItem: portalItems("3c112d7fe610486eaf4df3eac07d3ea0"),
+  portalItem: portalItems("1b0061355b83444aae54e6784036e46e"),
   elevationInfo: { mode: "absolute-height" },
   title: "Viaduct",
   labelsVisible: false,
