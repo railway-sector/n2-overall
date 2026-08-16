@@ -8,11 +8,6 @@ import { queryDefinitionExpression } from "../queryDefinition";
 import { useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import { legendSetter, rootSetter } from "../chartSetter";
-import {
-  makeQuery,
-  stackColumnChartData,
-  stackColumnChartRender,
-} from "../query";
 import ChartStackColumnRender from "chart-stack-column-render";
 import {
   cp_f,
@@ -23,6 +18,51 @@ import {
   viastatus_q,
 } from "../uniqueValues";
 import ChartStackColumns from "chart-stack-column";
+import QueryExpressionLayers from "query-layers-expression";
+
+//-----------------------//
+//     usetUtilityData   //
+//-----------------------//
+function useUtilityData(
+  cpackage: string,
+  query: any,
+  updateUtilityLinestats: any,
+) {
+  return useQuery<ChartResponse | any>({
+    queryKey: [
+      cpackage,
+      utilityLineLayer,
+      utilityLineLayer1,
+      util_status_f,
+      query,
+    ],
+    queryFn: async () => {
+      queryDefinitionExpression({
+        queryExpression: query.queryExpression(),
+        featureLayer: [utilityLineLayer, utilityLineLayer1],
+      });
+
+      //--- chart data
+      const chartData = await new ChartStackColumns({
+        where: query,
+        categoryTypes: util_types,
+        categoryTypeField: util_type_f,
+        layers: [utilityLineLayer],
+        statusField: util_status_f,
+        statusState: [0, 2, 3, 1],
+      }).chartDataStackColumns();
+
+      updateUtilityLinestats(chartData);
+
+      return {
+        chartData: chartData[0] || [],
+        totaln: chartData[1] || 0,
+        perc: chartData[2] || 0,
+      };
+    },
+    staleTime: Infinity,
+  });
+}
 
 // Draw chart
 const ChartUtilityLine = memo(() => {
@@ -31,38 +71,16 @@ const ChartUtilityLine = memo(() => {
   const { cpackage, updateUtilityLinestats } = use(MyContext);
 
   //--- Query Expression
-  const qV = [cpackage === "All" ? undefined : cpackage];
-  const qF = [cp_f];
-  const queryc_utill = makeQuery(qV, qF);
-
-  const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, util_status_f, utilityLineLayer],
-    queryFn: async () => {
-      queryDefinitionExpression({
-        queryExpression: queryc_utill.queryExpression(),
-        featureLayer: [utilityLineLayer, utilityLineLayer1],
-      });
-
-      //--- chart data
-      const chartData = await stackColumnChartData({
-        colchart: new ChartStackColumns(),
-        qChart: queryc_utill,
-        categoryTypes: util_types,
-        categoryTypeField: util_type_f,
-        layers: [utilityLineLayer],
-        statusField: util_status_f,
-        statusState: [0, 2, 3, 1],
-      });
-
-      updateUtilityLinestats(chartData);
-
-      return {
-        chartData: chartData[0] || [],
-        totaln: chartData[1] || 0,
-      };
-    },
-    staleTime: Infinity,
+  const q1 = new QueryExpressionLayers({
+    qFields: [cp_f],
+    qValues: [cpackage === "All" ? undefined : cpackage],
   });
+
+  const { data, isLoading } = useUtilityData(
+    cpackage,
+    q1,
+    updateUtilityLinestats,
+  );
   const chartData = data?.chartData || [];
 
   const legendRef = useRef<unknown | any | undefined>({});
@@ -90,6 +108,7 @@ const ChartUtilityLine = memo(() => {
   // Utility point
   useEffect(() => {
     const root = rootSetter({ chartID: chartID });
+    root.setThemes([]);
 
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
@@ -120,17 +139,17 @@ const ChartUtilityLine = memo(() => {
       // forceHidden: true,
     });
     legendRef.current = legend;
+    // legend.setAll({ marginTop: -5 });
 
     // chart renderer
-    stackColumnChartRender({
-      render: new ChartStackColumnRender(),
+    new ChartStackColumnRender({
       revit: false,
       layers: [utilityLineLayer, utilityLineLayer1],
       root,
       chart,
       data: chartData,
       buildingLayer: undefined,
-      qChart: queryc_utill,
+      where: q1,
       chartCategoryTypes: util_types,
       chartCategoryTypeField: util_type_f,
       statusTypename: ["Completed", "To be Constructed"], //["Completed", "To be Constructed", "Under Construction"],
@@ -148,7 +167,7 @@ const ChartUtilityLine = memo(() => {
       chartPaddingRightIconLabel,
       legend,
       updateChartPanelwidth: setChartPanelwidth,
-    });
+    }).chartRendererColumn();
 
     return () => {
       root.dispose();
@@ -176,7 +195,6 @@ const ChartUtilityLine = memo(() => {
       <div
         id={chartID}
         style={{
-          // width: "23vw",
           height: "32vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",

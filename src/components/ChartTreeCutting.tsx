@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState, use, memo } from "react";
 import { treeCuttingLayer } from "../layers";
-import {
-  thousands_separators,
-  dateUpdate,
-  pieChartData,
-  makeQuery,
-  PieChartRender,
-} from "../query";
+import { thousands_separators, dateUpdate, fieldStatistic } from "../query";
 import {
   cp_f,
   monitorLists,
@@ -28,6 +22,41 @@ import {
 } from "../chartSetter";
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
+import QueryExpressionLayers from "query-layers-expression";
+
+//--------------------------//
+//      useTreeData         //
+//--------------------------//
+function useTreeData(cpackage: any, query: any) {
+  return useQuery<ChartResponse | any>({
+    queryKey: [cpackage, treec_status_f, treeCuttingLayer],
+    queryFn: async () => {
+      queryDefinitionExpression({
+        queryExpression: query.queryExpression(),
+        featureLayer: [treeCuttingLayer],
+      });
+
+      const baseArgs = {
+        layer: treeCuttingLayer,
+        statisticField: "OBJECTID",
+        statisticType: "count" as const,
+      };
+
+      const [chartData, totalNumber] = await Promise.all([
+        new ChartPieSeries({
+          ...baseArgs,
+          where: `${query.queryExpression()} AND ${treec_status_f} >= 1`,
+          statusList: treec_status_q,
+          statusField: treec_status_f,
+        }).pieSeries(),
+
+        fieldStatistic({ ...baseArgs, where: query.queryExpression() }),
+      ]);
+
+      return { chartData, totalNumber };
+    },
+  });
+}
 
 const ChartTreeCutting = memo(() => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
@@ -43,38 +72,14 @@ const ChartTreeCutting = memo(() => {
   const asofdate = date ?? "";
 
   //--- Query expression
-  const qV = [cpackage === "All" ? undefined : cpackage];
-  const qF = [cp_f];
-  const queryc_treec = makeQuery(qV, qF);
-
-  const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, treeCuttingLayer, treec_status_f],
-    queryFn: async () => {
-      queryDefinitionExpression({
-        queryExpression: queryc_treec.queryExpression(),
-        featureLayer: [treeCuttingLayer],
-      });
-
-      //--- chart data
-      const chartData = await pieChartData({
-        piechart: new ChartPieSeries(),
-        qChart: queryc_treec,
-        layer: treeCuttingLayer,
-        statusList: treec_status_q,
-        statusField: treec_status_f,
-        statisticField: treec_status_f,
-        statisticType: "count",
-      });
-
-      return {
-        chartData: chartData[0] || [],
-        totaln: chartData[1] || 0,
-      };
-    },
-    staleTime: Infinity,
+  const q1 = new QueryExpressionLayers({
+    qFields: [cp_f],
+    qValues: [cpackage === "All" ? undefined : cpackage],
   });
+
+  const { data, isLoading } = useTreeData(cpackage, q1);
   const chartData = data?.chartData || [];
-  const totaln = data?.totaln || 0;
+  const totalNumber = data?.totalNumber || 0;
 
   //---- Parameters
   const new_fontSize = chartPanelwidth / 22.3;
@@ -120,13 +125,12 @@ const ChartTreeCutting = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    PieChartRender({
-      render: new ChartPieSeriesRender(),
+    new ChartPieSeriesRender({
       chart,
       pieSeries: pieSeries,
       legend,
       root,
-      qChart: queryc_treec,
+      qChart: q1,
       q2Expression: undefined,
       status_field: treec_status_f,
       view: arcgisScene?.view,
@@ -140,7 +144,7 @@ const ChartTreeCutting = memo(() => {
       statusArray: treec_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
-    });
+    }).chartDataRenderer();
 
     return () => {
       root.dispose();
@@ -191,7 +195,7 @@ const ChartTreeCutting = memo(() => {
               opacity: isLoading ? 0 : 1,
             }}
           >
-            {thousands_separators(totaln)}
+            {thousands_separators(totalNumber)}
           </dd>
         </dl>
       </div>

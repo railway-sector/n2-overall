@@ -12,12 +12,7 @@ import { queryDefinitionExpression } from "../queryDefinition";
 import { legendSetter, rootSetter } from "../chartSetter";
 import { useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
-import {
-  dateUpdate,
-  makeQuery,
-  stackColumnChartData,
-  stackColumnChartRender,
-} from "../query";
+import { dateUpdate } from "../query";
 import ChartStackColumnRender from "chart-stack-column-render";
 import {
   cp_f,
@@ -28,6 +23,38 @@ import {
   viatypes_q,
 } from "../uniqueValues";
 import ChartStackColumns from "chart-stack-column";
+import QueryExpressionLayers from "query-layers-expression";
+
+//-----------------------//
+//     usetViaductData   //
+//-----------------------//
+function useViaductData(cpackage: string, query: any) {
+  return useQuery<ChartResponse | any>({
+    queryKey: [cpackage, via_status_f, viaductLayer],
+    queryFn: async () => {
+      queryDefinitionExpression({
+        queryExpression: query.queryExpression(),
+        featureLayer: [pierAccessLayer, viaductLayer],
+      });
+
+      //--- chart data
+      const chartData = await new ChartStackColumns({
+        where: query,
+        categoryTypes: viatypes_q,
+        categoryTypeField: via_type_f,
+        layers: [viaductLayer],
+        statusField: via_status_f,
+        statusState: [1, 2, 3, 4],
+      }).chartDataStackColumns();
+
+      return {
+        chartData: chartData[0] || [],
+        percComp: chartData[2] || 0,
+      };
+    },
+    staleTime: Infinity,
+  });
+}
 
 // Draw chart
 const ChartViaduct = memo(() => {
@@ -46,38 +73,14 @@ const ChartViaduct = memo(() => {
   const asofdate = date ?? "";
 
   //--- Query Expression
-  const qV = [cpackage === "All" ? undefined : cpackage];
-  const qF = [cp_f];
-  const queryc_via = makeQuery(qV, qF);
-
-  const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, via_status_f, viaductLayer],
-    queryFn: async () => {
-      queryDefinitionExpression({
-        queryExpression: queryc_via.queryExpression(),
-        featureLayer: [pierAccessLayer, viaductLayer],
-      });
-
-      //--- chart data
-      const chartData = await stackColumnChartData({
-        colchart: new ChartStackColumns(),
-        qChart: queryc_via,
-        categoryTypes: viatypes_q,
-        categoryTypeField: via_type_f,
-        layers: [viaductLayer],
-        statusField: via_status_f,
-        statusState: [1, 2, 3, 4],
-      });
-
-      return {
-        chartData: chartData[0] || [],
-        perc_comp: chartData[2] || 0,
-      };
-    },
-    staleTime: Infinity,
+  const q1 = new QueryExpressionLayers({
+    qFields: [cp_f],
+    qValues: [cpackage === "All" ? undefined : cpackage],
   });
+
+  const { data, isLoading } = useViaductData(cpackage, q1);
   const chartData = data?.chartData || [];
-  const perc_comp = data?.perc_comp || 0;
+  const percComp = data?.percComp || 0;
 
   // Define parameters
   const marginTop = 0;
@@ -88,15 +91,12 @@ const ChartViaduct = memo(() => {
   const paddingLeft = 5;
   const paddingRight = 5;
   const paddingBottom = 0;
-  const chartIconPositionX = -21;
-  const chartPaddingRightIconLabel = 45;
+  const chartIconPositionX = undefined;
+  const chartPaddingRightIconLabel = 15;
 
   const chartBorderLineColor = "#00c5ff";
   const chartBorderLineWidth = 0.4;
 
-  // ************************************
-  //  Responsive Chart parameters
-  // ***********************************
   const new_fontSize = chartPanelwidth / 20;
   const new_valueSize = new_fontSize * 1.55;
   const new_chartIconSize = chartPanelwidth * 0.07;
@@ -108,6 +108,8 @@ const ChartViaduct = memo(() => {
   // Utility Chart
   useEffect(() => {
     const root = rootSetter({ chartID: chartID });
+    root.setThemes([]);
+
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
@@ -137,15 +139,14 @@ const ChartViaduct = memo(() => {
     legendRef.current = legend;
 
     //--- Chart renderer
-    stackColumnChartRender({
-      render: new ChartStackColumnRender(),
+    new ChartStackColumnRender({
       revit: false,
       layers: [viaductLayer],
       root,
       chart,
       data: chartData,
       buildingLayer: undefined,
-      qChart: queryc_via,
+      where: q1,
       chartCategoryTypes: viatypes_q,
       chartCategoryTypeField: via_type_f,
       statusTypename: ["Completed", "To be Constructed", "Under Construction"], //["Completed", "To be Constructed", "Under Construction"],
@@ -163,7 +164,7 @@ const ChartViaduct = memo(() => {
       chartPaddingRightIconLabel,
       legend,
       updateChartPanelwidth: setChartPanelwidth,
-    });
+    }).chartRendererColumn();
 
     return () => {
       root.dispose();
@@ -212,7 +213,7 @@ const ChartViaduct = memo(() => {
               opacity: isLoading ? 0 : 1,
             }}
           >
-            {perc_comp} %
+            {percComp} %
           </dd>
         </dl>
       </div>

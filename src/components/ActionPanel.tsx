@@ -29,6 +29,12 @@ function ActionPanel() {
   const [activeWidget, setActiveWidget] = useState(null);
   const [nextWidget, setNextWidget] = useState(null);
 
+  //--- Render only when selected
+  const [hasOpenedBasemaps, setHasOpenedBasemaps] = useState(false);
+  useEffect(() => {
+    if (nextWidget === "basemaps") setHasOpenedBasemaps(true);
+  }, [nextWidget]);
+
   //--- Click action handler function for active & next widget
   const handleActionClick = (event: any) => {
     const id = event.target.id;
@@ -163,7 +169,9 @@ function ActionPanel() {
         </calcite-panel>
 
         <calcite-panel heading="Basemaps" data-panel-id="basemaps" hidden>
-          <arcgis-basemap-gallery referenceElement="arcgis-scene"></arcgis-basemap-gallery>
+          {hasOpenedBasemaps ? (
+            <arcgis-basemap-gallery referenceElement="arcgis-scene"></arcgis-basemap-gallery>
+          ) : null}{" "}
         </calcite-panel>
 
         <calcite-panel

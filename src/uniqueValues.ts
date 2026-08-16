@@ -1486,25 +1486,12 @@ export const via_type_f = "Type";
 export const via_status_f = "Status";
 
 //--- VIADUCT TYPES
-const via_icons = [
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Pile_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Pilecap_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Pier_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Pierhead_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Precast_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Precast_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Precast_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Precast_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Precast_Logo.svg",
-  "https://EijiGorilla.github.io/Symbols/Viaduct_Images/Viaduct_Precast_Logo.svg",
-];
-
 export const viatypes_q = [
-  { value: 1, category: "Bored Pile", icon: via_icons[0] },
-  { value: 2, category: "Pile Cap", icon: via_icons[1] },
-  { value: 3, category: "Pier", icon: via_icons[2] },
-  { value: 4, category: "Pier Head", icon: via_icons[3] },
-  { value: 5, category: "Precast", icon: via_icons[4] },
+  { value: 1, category: "Bored Pile" },
+  { value: 2, category: "Pile Cap" },
+  { value: 3, category: "Pier" },
+  { value: 4, category: "Pier Head" },
+  { value: 5, category: "Precast" },
 ];
 
 //--- VIADUCT STATUS

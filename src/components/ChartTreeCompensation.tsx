@@ -13,44 +13,47 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
-import { makeQuery, pieChartData, PieChartRender } from "../query";
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
+import QueryExpressionLayers from "query-layers-expression";
+
+//--------------------------//
+//      useTreeData         //
+//--------------------------//
+function useTreeData(cpackage: any, query: any) {
+  return useQuery<ChartResponse | any>({
+    queryKey: [cpackage, treem_status_q, treeCompensationLayer],
+    queryFn: async () => {
+      queryDefinitionExpression({
+        queryExpression: query.queryExpression(),
+        featureLayer: [treeCompensationLayer],
+      });
+
+      const chartData = await new ChartPieSeries({
+        layer: treeCompensationLayer,
+        statisticField: "OBJECTID",
+        statisticType: "count" as const,
+        where: `${query.queryExpression()} AND ${treem_status_f} >= 1`,
+        statusList: treem_status_q,
+        statusField: treem_status_f,
+      }).pieSeries();
+
+      return { chartData };
+    },
+  });
+}
 
 const ChartTreeCompensation = memo(() => {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [_chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
 
-  const qV = [cpackage === "All" ? undefined : cpackage];
-  const qF = [cp_f];
-  const queryc_treem = makeQuery(qV, qF);
-
-  const { data, isLoading } = useQuery<ChartResponse | any>({
-    queryKey: [cpackage, treem_status_f, treeCompensationLayer],
-    queryFn: async () => {
-      queryDefinitionExpression({
-        queryExpression: queryc_treem.queryExpression(),
-        featureLayer: [treeCompensationLayer],
-      });
-      //--- chart data
-      const chartData = await pieChartData({
-        piechart: new ChartPieSeries(),
-        qChart: queryc_treem,
-        layer: treeCompensationLayer,
-        statusList: treem_status_q,
-        statusField: treem_status_f,
-        statisticField: treem_status_f,
-        statisticType: "count",
-      });
-
-      return {
-        chartData: chartData[0] || [],
-        totaln: chartData[1] || 0,
-      };
-    },
-    staleTime: Infinity,
+  const q1 = new QueryExpressionLayers({
+    qFields: [cp_f],
+    qValues: [cpackage === "All" ? undefined : cpackage],
   });
+
+  const { data, isLoading } = useTreeData(cpackage, q1);
   const chartData = data?.chartData || [];
 
   //---- Parameters
@@ -94,13 +97,12 @@ const ChartTreeCompensation = memo(() => {
     legend.data.setAll(pieSeries.dataItems);
 
     // Render chart
-    PieChartRender({
-      render: new ChartPieSeriesRender(),
+    new ChartPieSeriesRender({
       chart,
       pieSeries: pieSeries,
       legend,
       root,
-      qChart: queryc_treem,
+      qChart: q1,
       q2Expression: undefined,
       status_field: treem_status_f,
       view: arcgisScene?.view,
@@ -114,7 +116,7 @@ const ChartTreeCompensation = memo(() => {
       statusArray: treem_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
-    });
+    }).chartDataRenderer();
 
     return () => {
       root.dispose();
