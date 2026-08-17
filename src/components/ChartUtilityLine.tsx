@@ -160,7 +160,6 @@ const ChartUtilityLine = memo(() => {
       strokeColor: chartBorderLineColor,
       strokeWidth: chartBorderLineWidth,
       view: arcgisScene?.view,
-      setLayerViewFilter: undefined,
       new_chartIconSize,
       new_axisFontSize,
       chartIconPositionX,
