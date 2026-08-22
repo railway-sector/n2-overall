@@ -54,7 +54,7 @@ function useLotData(
   urgentQuery: any,
 ) {
   return useQuery<ChartResponse | any>({
-    queryKey: [lot_status_f, lotLayer, cpackage],
+    queryKey: [lot_status_f, lotLayer, cpackage, cpackage, urgentQuery],
     queryFn: async () => {
       const q1 = new QueryExpressionLayers({
         ...baseFilter,
@@ -148,7 +148,7 @@ const LotChart = () => {
   const arcgisScene = document.querySelector("arcgis-scene");
 
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
-  const [urgentType, setUrgentType] = useState<any>("OFF");
+  const [urgentType, setUrgentType] = useState<any>(lot_urgent_switch[0]);
 
   //--- As of date
   const { data: date } = useQuery<any>({
