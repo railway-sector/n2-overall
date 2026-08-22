@@ -54,7 +54,7 @@ function useLotData(
   urgentQuery: any,
 ) {
   return useQuery<ChartResponse | any>({
-    queryKey: [lot_status_f, lotLayer, cpackage, cpackage, urgentQuery],
+    queryKey: [lot_status_f, lotLayer, cpackage, urgentQuery, baseFilter],
     queryFn: async () => {
       const q1 = new QueryExpressionLayers({
         ...baseFilter,
