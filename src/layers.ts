@@ -132,6 +132,8 @@ export const pnrLayer = new FeatureLayer({
   definitionExpression: "OwnershipType IN (1, 2, 3)",
   elevationInfo: { mode: "on-the-ground" },
   labelsVisible: false,
+  minScale: 50000,
+  maxScale: 0,
   renderer: pnr_renderer,
   popupTemplate: pnr_popup,
 });
@@ -142,7 +144,7 @@ export const stationLayer = new FeatureLayer({
   layerId: 2,
   title: "N2 Stations",
   labelingInfo: [label_stationp],
-  elevationInfo: { mode: "relative-to-ground" },
+  elevationInfo: { mode: "on-the-ground" },
 });
 stationLayer.listMode = "hide";
 

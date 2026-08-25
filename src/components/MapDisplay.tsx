@@ -21,6 +21,7 @@ import {
   alignmentGroupLayer,
   pierHeadColumnLayer,
   meralco_tss10_groupLayer,
+  stationLayer,
   sources,
 } from "../layers";
 import type { ArcgisSearch } from "@arcgis/map-components/components/arcgis-search";
@@ -57,6 +58,7 @@ export default function MapDisplay() {
       meralco_tss10_groupLayer,
       alignmentGroupLayer,
       handedOverLotLayer,
+      stationLayer,
     ]);
 
     arcgisSearch.allPlaceholder = "LotID, StructureID, Chainage";
