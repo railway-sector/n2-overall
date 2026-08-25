@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-import { useRef, useState, useEffect, memo, use } from "react";
+import { useRef, useState, useEffect, memo, use, useMemo } from "react";
 import { dateUpdate, fieldStatistic, thousands_separators } from "../query";
 import {
   nlo_status_f,
@@ -92,20 +92,23 @@ const ChartNlo = memo(() => {
   const new_fontSize = chartPanelwidth / 22.3;
   const new_valueSize = new_fontSize * 1.55;
   const new_imageSize = chartPanelwidth * 0.028;
-  const new_pieSeriesScale = 280;
+  const seriesScale = 280;
   const new_asofDateSize = chartPanelwidth * 0.032;
-  const new_pieInnerValueFontSize = "1.3rem";
-  const new_pieInnerLabelFontSize = "0.45em";
+  const innerValueFontSize = "1.3rem";
+  const innerLabelFontSize = "0.45em";
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
   const chartID = "nlo-chart";
 
   //--- Base filter
-  const baseFilter = {
-    qFields: [cp_f],
-    qValues: [cpackage === "All" ? undefined : cpackage],
-  };
+  const baseFilter = useMemo(
+    () => ({
+      qFields: [cp_f],
+      qValues: [cpackage === "All" ? undefined : cpackage],
+    }),
+    [cpackage],
+  );
 
   //--- Fetch data
   const { data, isLoading } = useNloData(cpackage, nlo_status_f, baseFilter);
@@ -154,25 +157,24 @@ const ChartNlo = memo(() => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale: new_pieSeriesScale,
+      seriesScale,
       innerLabel: "HOUSEHOLDS",
-      innerLabelFontSize: new_pieInnerLabelFontSize,
-      innerValueFontSize: new_pieInnerValueFontSize,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: nloLayer,
       statusArray: nlo_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
+    if (!pieSeriesRef.current) return;
+    pieSeriesRef.current?.data.setAll(chartData);
+    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+
     return () => {
       root.dispose();
     };
-  }, [chartID, chartData]);
-
-  useEffect(() => {
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
-  });
+  }, [chartData]);
 
   return (
     <>

@@ -979,10 +979,10 @@ export const util_type_icons = [
 ];
 
 export const util_types = [
-  { value: 1, category: "Telecom", icon: util_type_icons[0] },
-  { value: 2, category: "Water", icon: util_type_icons[1] },
-  { value: 3, category: "Sewage", icon: util_type_icons[2] },
-  { value: 4, category: "Power", icon: util_type_icons[3] },
+  { value: 1, category: "Telecom" },
+  { value: 2, category: "Water" },
+  { value: 3, category: "Sewage" },
+  { value: 4, category: "Power" },
 ];
 
 export const util_status_q = [

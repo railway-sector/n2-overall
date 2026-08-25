@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, use, memo } from "react";
+import { useEffect, useRef, useState, use, memo, useMemo } from "react";
 import { utilityPointLayer, utilityPointLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
@@ -73,10 +73,14 @@ const ChartUtilityPoint = memo(() => {
   const asofdate = date ?? "";
 
   //--- Query Expression
-  const q1 = new QueryExpressionLayers({
-    qFields: [cp_f],
-    qValues: [cpackage === "All" ? undefined : cpackage],
-  });
+  const q1 = useMemo(
+    () =>
+      new QueryExpressionLayers({
+        qFields: [cp_f],
+        qValues: [cpackage === "All" ? undefined : cpackage],
+      }),
+    [cpackage],
+  );
 
   const { data, isLoading } = useUtilityData(cpackage, q1);
   const chartData = data?.chartData[0] || [];
@@ -97,8 +101,8 @@ const ChartUtilityPoint = memo(() => {
   const paddingLeft = 5;
   const paddingRight = 5;
   const paddingBottom = 0;
-  const chartIconPositionX = -21;
-  const chartPaddingRightIconLabel = 45;
+  const chartIconPositionX = undefined;
+  const chartPaddingRightIconLabel = 25;
 
   const chartBorderLineColor = "#00c5ff";
   const chartBorderLineWidth = 0.4;
@@ -110,8 +114,7 @@ const ChartUtilityPoint = memo(() => {
   const new_valueSize = new_fontSize * 1.55;
   const new_chartIconSize = chartPanelwidth * 0.06;
   const new_axisFontSize = chartPanelwidth * 0.03;
-  const new_imageSize = chartPanelwidth * 0.04;
-  const new_asofDateSize = chartPanelwidth * 0.032;
+  const new_asofDateSize = chartPanelwidth * 0.03;
 
   // Utility point
   useEffect(() => {
@@ -176,7 +179,7 @@ const ChartUtilityPoint = memo(() => {
     return () => {
       root.dispose();
     };
-  });
+  }, [chartData]);
 
   return (
     <>
@@ -191,8 +194,8 @@ const ChartUtilityPoint = memo(() => {
         <img
           src="https://EijiGorilla.github.io/Symbols/Utility_Logo.png"
           alt="Land Logo"
-          height={`${new_imageSize}%`}
-          width={`${new_imageSize}%`}
+          height={`65px`}
+          width={`65px`}
           style={{ paddingTop: "3px", paddingLeft: "15px" }}
         />
         <dl style={{ alignItems: "center" }}>
@@ -245,7 +248,7 @@ const ChartUtilityPoint = memo(() => {
           height: "29vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
-          marginRight: "15px",
+          marginRight: "20px",
           marginLeft: "15px",
           opacity: isLoading ? 0 : 1,
         }}

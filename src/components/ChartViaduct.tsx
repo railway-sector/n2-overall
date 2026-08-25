@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-import { useEffect, useRef, useState, use, memo } from "react";
+import { useEffect, useRef, useState, use, memo, useMemo } from "react";
 import { pierAccessLayer, viaductLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
@@ -73,10 +73,14 @@ const ChartViaduct = memo(() => {
   const asofdate = date ?? "";
 
   //--- Query Expression
-  const q1 = new QueryExpressionLayers({
-    qFields: [cp_f],
-    qValues: [cpackage === "All" ? undefined : cpackage],
-  });
+  const q1 = useMemo(
+    () =>
+      new QueryExpressionLayers({
+        qFields: [cp_f],
+        qValues: [cpackage === "All" ? undefined : cpackage],
+      }),
+    [cpackage],
+  );
 
   const { data, isLoading } = useViaductData(cpackage, q1);
   const chartData = data?.chartData || [];
@@ -168,7 +172,7 @@ const ChartViaduct = memo(() => {
     return () => {
       root.dispose();
     };
-  });
+  }, [chartData]);
 
   const primaryLabelColor = "#9ca3af";
   const valueLabelColor = "#d1d5db";

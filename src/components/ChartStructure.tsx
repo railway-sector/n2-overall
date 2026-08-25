@@ -1,4 +1,4 @@
-import { memo, use, useEffect, useRef, useState } from "react";
+import { memo, use, useEffect, useMemo, useRef, useState } from "react";
 import { dateUpdate, fieldStatistic, thousands_separators } from "../query";
 import "../index.css";
 import {
@@ -96,19 +96,22 @@ const ChartStructure = memo(() => {
   const new_valueSize = new_fontSize * 1.55;
   const new_imageSize = chartPanelwidth * 0.03;
   const new_asofDateSize = chartPanelwidth * 0.032;
-  const new_pieSeriesScale = 220;
-  const new_pieInnerValueFontSize = "1.2rem";
-  const new_pieInnerLabelFontSize = "0.45em";
+  const seriesScale = 220;
+  const innerValueFontSize = "1.2rem";
+  const innerLabelFontSize = "0.45em";
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
   const chartID = "structure-chart";
 
   //--- Base filter
-  const baseFilter = {
-    qFields: [cp_f],
-    qValues: [cpackage === "All" ? undefined : cpackage],
-  };
+  const baseFilter = useMemo(
+    () => ({
+      qFields: [cp_f],
+      qValues: [cpackage === "All" ? undefined : cpackage],
+    }),
+    [cpackage],
+  );
 
   //--- Fetch data
   const { data, isLoading } = useStructureData(
@@ -134,7 +137,6 @@ const ChartStructure = memo(() => {
       legendValueText: "{valuePercentTotal.formatNumber('#.')}% ({value})",
       radius: 40,
       innerRadius: 28,
-      // scale: 0.5,
     });
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);
@@ -160,25 +162,24 @@ const ChartStructure = memo(() => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale: new_pieSeriesScale,
+      seriesScale,
       innerLabel: "STRUCTURES",
-      innerLabelFontSize: new_pieInnerLabelFontSize,
-      innerValueFontSize: new_pieInnerValueFontSize,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: structureLayer,
       statusArray: str_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
+    if (!pieSeriesRef.current) return;
+    pieSeriesRef.current?.data.setAll(chartData);
+    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+
     return () => {
       root.dispose();
     };
-  }, [chartID, chartData]);
-
-  useEffect(() => {
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
-  });
+  }, [chartData]);
 
   return (
     <>

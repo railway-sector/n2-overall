@@ -1,4 +1,4 @@
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { handedOverLotLayer, lotLayer } from "../layers";
 import {
   dateUpdate,
@@ -159,10 +159,13 @@ const LotChart = () => {
   const asofdate = date ?? "";
 
   //--- Base filter
-  const baseFilter = {
-    qFields: [cp_f],
-    qValues: [cpackage === "All" ? undefined : cpackage],
-  };
+  const baseFilter = useMemo(
+    () => ({
+      qFields: [cp_f],
+      qValues: [cpackage === "All" ? undefined : cpackage],
+    }),
+    [cpackage],
+  );
 
   const urgent_qe = urgentType === "OFF" ? undefined : lot_urgent_q;
 
@@ -192,9 +195,9 @@ const LotChart = () => {
   const new_valueSize = chartPanelwidth / 19;
   const new_sementedListSize = chartPanelwidth * 0.55;
   const new_asofDateSize = chartPanelwidth * 0.03;
-  const new_pieSeriesScale = 220;
-  const new_pieInnerValueFontSize = "1.1rem";
-  const new_pieInnerLabelFontSize = "0.45em";
+  const seriesScale = 220;
+  const innerValueFontSize = "1.1rem";
+  const innerLabelFontSize = "0.45em";
 
   const pieSeriesRef = useRef<any>(null);
   const legendRef = useRef<any>(null);
@@ -257,7 +260,7 @@ const LotChart = () => {
     //--- Chart Render
     new ChartPieSeriesRender({
       chart,
-      pieSeries: pieSeries,
+      pieSeries,
       legend,
       root,
       qChart: data?.query,
@@ -266,25 +269,24 @@ const LotChart = () => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale: new_pieSeriesScale,
+      seriesScale,
       innerLabel: "PRIVATE LOTS",
-      innerLabelFontSize: new_pieInnerLabelFontSize,
-      innerValueFontSize: new_pieInnerValueFontSize,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: lotLayer,
       statusArray: lot_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
+    if (!pieSeriesRef.current) return;
+    pieSeriesRef.current?.data.setAll(chartData);
+    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+
     return () => {
       root.dispose();
     };
-  }, [chartID, chartData]);
-
-  useEffect(() => {
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
-  });
+  }, [chartData]);
 
   return (
     <>

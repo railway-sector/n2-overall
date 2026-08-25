@@ -9,7 +9,6 @@ import type { ChartResponse } from "../interfaceKeys";
 import {
   chartSetter,
   legendSetter,
-  maybeDisposeRoot,
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
@@ -57,9 +56,9 @@ const ChartTreeCompensation = memo(() => {
   const chartData = data?.chartData || [];
 
   //---- Parameters
-  const new_pieSeriesScale = 220;
-  const new_pieInnerValueFontSize = "0.75rem";
-  const new_pieInnerLabelFontSize = "0.45em";
+  const seriesScale = 220;
+  const innerValueFontSize = "0.75rem";
+  const innerLabelFontSize = "0.45em";
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
@@ -67,7 +66,6 @@ const ChartTreeCompensation = memo(() => {
   const chartID = "pie-compen";
 
   useEffect(() => {
-    maybeDisposeRoot(chartID);
     const root = rootSetter({ chartID: chartID });
     const chart = chartSetter({ root: root });
     chartRef.current = chart;
@@ -108,25 +106,24 @@ const ChartTreeCompensation = memo(() => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale: new_pieSeriesScale,
+      seriesScale,
       innerLabel: "TREES",
-      innerLabelFontSize: new_pieInnerLabelFontSize,
-      innerValueFontSize: new_pieInnerValueFontSize,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: treeCompensationLayer,
       statusArray: treem_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
+    if (!pieSeriesRef.current) return;
+    pieSeriesRef.current?.data.setAll(chartData);
+    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+
     return () => {
       root.dispose();
     };
-  }, [chartID, chartData]);
-
-  useEffect(() => {
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
-  });
+  }, [chartData]);
 
   return (
     <>

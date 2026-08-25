@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, use, memo } from "react";
+import { useEffect, useRef, useState, use, memo, useMemo } from "react";
 import { utilityLineLayer, utilityLineLayer1 } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
@@ -71,10 +71,14 @@ const ChartUtilityLine = memo(() => {
   const { cpackage, updateUtilityLinestats } = use(MyContext);
 
   //--- Query Expression
-  const q1 = new QueryExpressionLayers({
-    qFields: [cp_f],
-    qValues: [cpackage === "All" ? undefined : cpackage],
-  });
+  const q1 = useMemo(
+    () =>
+      new QueryExpressionLayers({
+        qFields: [cp_f],
+        qValues: [cpackage === "All" ? undefined : cpackage],
+      }),
+    [cpackage],
+  );
 
   const { data, isLoading } = useUtilityData(
     cpackage,
@@ -96,8 +100,8 @@ const ChartUtilityLine = memo(() => {
   const paddingLeft = 5;
   const paddingRight = 5;
   const paddingBottom = 0;
-  const chartIconPositionX = -21;
-  const chartPaddingRightIconLabel = 45;
+  const chartIconPositionX = undefined;
+  const chartPaddingRightIconLabel = 25;
 
   const chartBorderLineColor = "#00c5ff";
   const chartBorderLineWidth = 0.4;
@@ -136,10 +140,8 @@ const ChartUtilityLine = memo(() => {
       scale: 0.9,
       layout: root.horizontalLayout,
       centerX: -30,
-      // forceHidden: true,
     });
     legendRef.current = legend;
-    // legend.setAll({ marginTop: -5 });
 
     // chart renderer
     new ChartStackColumnRender({
@@ -171,7 +173,7 @@ const ChartUtilityLine = memo(() => {
     return () => {
       root.dispose();
     };
-  });
+  }, [chartData, new_chartIconSize]);
 
   return (
     <>
@@ -197,7 +199,7 @@ const ChartUtilityLine = memo(() => {
           height: "32vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
-          marginRight: "15px",
+          marginRight: "20px",
           marginLeft: "15px",
           opacity: isLoading ? 0 : 1,
         }}

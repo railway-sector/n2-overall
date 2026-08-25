@@ -86,9 +86,9 @@ const ChartTreeCutting = memo(() => {
   const new_valueSize = new_fontSize * 1.55;
   const new_imageSize = chartPanelwidth * 0.03;
   const new_asofDateSize = chartPanelwidth * 0.032;
-  const new_pieSeriesScale = 220;
-  const new_pieInnerValueFontSize = "0.75rem";
-  const new_pieInnerLabelFontSize = "0.45em";
+  const seriesScale = 220;
+  const innerValueFontSize = "0.75rem";
+  const innerLabelFontSize = "0.45em";
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
@@ -136,25 +136,24 @@ const ChartTreeCutting = memo(() => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale: new_pieSeriesScale,
+      seriesScale,
       innerLabel: "TREES",
-      innerLabelFontSize: new_pieInnerLabelFontSize,
-      innerValueFontSize: new_pieInnerValueFontSize,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: treeCuttingLayer,
       statusArray: treec_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
+    if (!pieSeriesRef.current) return;
+    pieSeriesRef.current?.data.setAll(chartData);
+    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+
     return () => {
       root.dispose();
     };
-  }, [chartID, chartData]);
-
-  useEffect(() => {
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
-  });
+  }, [chartData]);
 
   return (
     <>
