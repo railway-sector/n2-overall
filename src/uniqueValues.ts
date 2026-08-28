@@ -41,15 +41,6 @@ export const portalItems = (id: any) => {
 
 export const cpackages = ["All", "N-01", "N-02", "N-03", "N-04"];
 
-export const monitorLists = [
-  "Land Acquisition",
-  "Structure",
-  "Non Land Owner",
-  "Utility Relocation",
-  "Trees",
-  "Viaduct",
-];
-
 //----------------------------------------------//
 //              Chart Parameters                //
 //----------------------------------------------//
@@ -99,6 +90,7 @@ export const lot_tunnel_f = "TunnelAffected";
 export const lot_urgent_f = "Urgent";
 export const lot_urgent_q = `${lot_urgent_f} = 0`;
 export const lot_urgent_switch = ["OFF", "ON"];
+export const lot_pte_f = "PTE";
 
 export const lot_endorsed_arr = ["Not Endorsed", "Endorsed", "NA"];
 
@@ -110,7 +102,11 @@ export const lot_status_q = [
   { value: 3, category: "For Legal Pass", color: "#ffff00" },
   { value: 4, category: "For Offer to Buy", color: "#ffaa00" },
   { value: 5, category: "For Notice of Taking", color: "#FF5733" },
-  { value: 6, category: "With PTE", color: "#70AD47" },
+  {
+    value: 6,
+    category: "With Certificate with No Objection (CNO)",
+    color: "#E2F4C5",
+  },
   { value: 7, category: "For Expropriation", color: "#6f0000" },
   { value: 8, category: "Optimized", color: "#B2B2B2" },
 ];
@@ -299,6 +295,32 @@ export const lot_access_renderer = new SimpleRenderer({
   }),
 });
 
+//--- PTE STATUS LAYER ---//
+export const lot_pte_renderer = new SimpleRenderer({
+  symbol: new SimpleFillSymbol({
+    color: "#70AD47",
+    style: "forward-diagonal",
+    outline: { width: "6px", color: "#70AD47" },
+  }),
+});
+
+//--- PARTIAL PAYMENT LAYER  ---//
+export const lot_partialPayment_renderer = new UniqueValueRenderer({
+  valueExpression:
+    "When($feature.PartialPayment == 1, 'partialPayment', 'others')",
+  uniqueValueInfos: [
+    {
+      value: "partialPayment",
+      label: " ",
+      symbol: new SimpleFillSymbol({
+        style: "vertical",
+        color: "#a7dbdb",
+        outline: new SimpleLineSymbol({ color: "#a7dbdb", width: "4px" }),
+      }),
+    },
+  ],
+});
+
 //----------------------------------------------//
 //       Structure Layer Parameters             //
 //----------------------------------------------//
@@ -436,6 +458,21 @@ export const str_uniqueV_owner = str_owner_q.map((item: any) => {
 export const str_owner_renderer = new UniqueValueRenderer({
   field: str_owner_status_f,
   uniqueValueInfos: str_uniqueV_owner,
+});
+
+//--- DEMOLISHED STRUCTURE LAYER ---//
+export const demolished_renderer = new UniqueValueRenderer({
+  valueExpression: "When($feature.Demolition == 1, 'Demolished', 'others')",
+  uniqueValueInfos: [
+    {
+      value: "Demolished",
+      label: "Demolished",
+      symbol: new SimpleFillSymbol({
+        color: [0, 255, 255, 0.3],
+        outline: new SimpleLineSymbol({ color: "#00ffff", width: "4px" }),
+      }),
+    },
+  ],
 });
 
 //----------------------------------------------//
@@ -1603,6 +1640,33 @@ function zoomToAction(id: string) {
   ]);
 }
 
+const HIDDEN_TITLES = new Set([
+  "Chainage",
+  "Temporary Fencing",
+  "Permanent Fencing",
+  "Maintenance Road",
+  "Drainage",
+  "Provision for Freight Line",
+  "Households Occupancy",
+  "Households Ownership (Structure)",
+  "Occupancy (Structure)",
+  "Structure",
+  "NGCP Pole Relocation Working Area",
+  "NGCP Pole Relocation Tagged Structures",
+  "Land Acquisition (Endorsed Status)",
+  "Handed-Over Area",
+  "Super Urgent Lot",
+  "Handed-Over (public + private)",
+  "With Partial Payment",
+  "Tree Cutting & Compensation",
+  "Utility Relocation",
+  "Pier Head/Column",
+  "Viaduct",
+  "MERALCO TSS 10",
+  "Station Structures",
+  "Candidate Lots of NSCR-Ex Passenger & Freight Line for Optimization",
+]);
+
 export function defineActions(event: any) {
   const { item } = event;
   if (item.title === "Sapang Balen River Realignment") {
@@ -1624,36 +1688,8 @@ export function defineActions(event: any) {
   }
 
   if (item.layer.type !== "group") {
-    item.panel = {
-      content: "legend",
-      open: true,
-    };
+    item.panel = { content: "legend", open: true };
   }
 
-  item.title === "Chainage" ||
-  item.title === "Temporary Fencing" ||
-  item.title === "Permanent Fencing" ||
-  item.title === "Maintenance Road" ||
-  item.title === "Drainage" ||
-  item.title === "Provision for Freight Line" ||
-  item.title === "Households Occupancy" ||
-  item.title === "Households Ownership (Structure)" ||
-  item.title === "Occupancy (Structure)" ||
-  item.title === "Structure" ||
-  item.title === "NGCP Pole Relocation Working Area" ||
-  item.title === "NGCP Pole Relocation Tagged Structures" ||
-  item.title === "Land Acquisition (Endorsed Status)" ||
-  item.title === "Handed-Over Area" ||
-  item.title === "Super Urgent Lot" ||
-  item.title === "Handed-Over (public + private)" ||
-  item.title === "Tree Cutting & Compensation" ||
-  item.title === "Utility Relocation" ||
-  item.title === "Pier Head/Column" ||
-  item.title === "Viaduct" ||
-  item.title === "MERALCO TSS 10" ||
-  item.title === "Station Structures" ||
-  item.title ===
-    "Candidate Lots of NSCR-Ex Passenger & Freight Line for Optimization"
-    ? (item.visible = false)
-    : (item.visible = true);
+  item.visible = !HIDDEN_TITLES.has(item.title);
 }

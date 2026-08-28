@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, use, memo } from "react";
+import { useEffect, useRef, useState, use, memo, useMemo } from "react";
 import { treeCompensationLayer } from "../layers";
 import { cp_f, treem_status_f, treem_status_q } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
@@ -15,6 +15,11 @@ import {
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
 import QueryExpressionLayers from "query-layers-expression";
+
+const CHART_ID = "pie-compen";
+const SERIES_SCALE = 220;
+const INNER_VALUE_FONT_SIZE = "0.75rem";
+const INNER_LABEL_FONT_SIZE = "0.45em";
 
 //--------------------------//
 //      useTreeData         //
@@ -43,36 +48,34 @@ function useTreeData(cpackage: any, query: any) {
 }
 
 const ChartTreeCompensation = memo(() => {
-  const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
-  const [_chartPanelwidth, setChartPanelwidth] = useState<any>();
+  const [, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
 
-  const q1 = new QueryExpressionLayers({
-    qFields: [cp_f],
-    qValues: [cpackage === "All" ? undefined : cpackage],
-  });
+  const q1 = useMemo(
+    () =>
+      new QueryExpressionLayers({
+        qFields: [cp_f],
+        qValues: [cpackage === "All" ? undefined : cpackage],
+      }),
+    [cpackage],
+  );
 
   const { data, isLoading } = useTreeData(cpackage, q1);
-  const chartData = data?.chartData || [];
-
-  //---- Parameters
-  const seriesScale = 220;
-  const innerValueFontSize = "0.75rem";
-  const innerLabelFontSize = "0.45em";
+  const chartData = data?.chartData ?? [];
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const chartID = "pie-compen";
 
   useEffect(() => {
-    const root = rootSetter({ chartID: chartID });
-    const chart = chartSetter({ root: root });
+    const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+    const root = rootSetter({ chartID: CHART_ID });
+    const chart = chartSetter({ root });
     chartRef.current = chart;
 
     const pieSeries = seriesSetter({
-      chart: chart,
-      root: root,
+      chart,
+      root,
       categoryField: "category",
       valueField: "value",
       legendLabelText: "{category}",
@@ -85,8 +88,8 @@ const ChartTreeCompensation = memo(() => {
     chart.series.push(pieSeries);
 
     const legend = legendSetter({
-      chart: chart,
-      root: root,
+      chart,
+      root,
       centerX: 50,
       x: 50,
       marginTop: -15,
@@ -94,10 +97,9 @@ const ChartTreeCompensation = memo(() => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    // Render chart
     new ChartPieSeriesRender({
       chart,
-      pieSeries: pieSeries,
+      pieSeries,
       legend,
       root,
       qChart: q1,
@@ -106,37 +108,32 @@ const ChartTreeCompensation = memo(() => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale,
+      seriesScale: SERIES_SCALE,
       innerLabel: "TREES",
-      innerLabelFontSize,
-      innerValueFontSize,
+      innerLabelFontSize: INNER_LABEL_FONT_SIZE,
+      innerValueFontSize: INNER_VALUE_FONT_SIZE,
       layer: treeCompensationLayer,
       statusArray: treem_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
-    if (!pieSeriesRef.current) return;
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+    pieSeries.data.setAll(chartData);
+    legend.data.setAll(pieSeries.dataItems);
 
-    return () => {
-      root.dispose();
-    };
+    return () => root.dispose();
   }, [chartData]);
 
   return (
-    <>
-      <div
-        id={chartID}
-        style={{
-          height: "34vh",
-          backgroundColor: "rgb(0,0,0,0)",
-          color: "white",
-          opacity: isLoading ? 0 : 1,
-        }}
-      ></div>
-    </>
+    <div
+      id={CHART_ID}
+      style={{
+        height: "34vh",
+        backgroundColor: "rgb(0,0,0,0)",
+        color: "white",
+        opacity: isLoading ? 0 : 1,
+      }}
+    ></div>
   );
 });
 

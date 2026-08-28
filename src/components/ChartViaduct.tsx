@@ -16,7 +16,6 @@ import { dateUpdate } from "../query";
 import ChartStackColumnRender from "chart-stack-column-render";
 import {
   cp_f,
-  monitorLists,
   via_status_f,
   via_type_f,
   viastatus_q,
@@ -24,6 +23,24 @@ import {
 } from "../uniqueValues";
 import ChartStackColumns from "chart-stack-column";
 import QueryExpressionLayers from "query-layers-expression";
+
+const CHART_ID = "viaduct-bar";
+const CHART_BORDER_COLOR = "#00c5ff";
+const CHART_BORDER_WIDTH = 0.4;
+const CHART_ICON_POSITION_X = undefined;
+const CHART_PADDING_RIGHT_ICON_LABEL = 15;
+
+// Static chart layout — doesn't depend on props/state
+const CHART_LAYOUT = {
+  marginTop: 0,
+  marginLeft: 0,
+  marginRight: 0,
+  marginBottom: 0,
+  paddingTop: 10,
+  paddingLeft: 5,
+  paddingRight: 5,
+  paddingBottom: 0,
+} as const;
 
 //-----------------------//
 //     usetViaductData   //
@@ -63,11 +80,10 @@ const ChartViaduct = memo(() => {
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const legendRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const chartID = "viaduct-bar";
 
-  const { data: date } = useQuery<any>({
+  const { data: date } = useQuery({
     queryKey: ["As_Of_Date"],
-    queryFn: () => dateUpdate(monitorLists[5]),
+    queryFn: () => dateUpdate("Viaduct"),
     staleTime: Infinity,
   });
   const asofdate = date ?? "";
@@ -83,23 +99,8 @@ const ChartViaduct = memo(() => {
   );
 
   const { data, isLoading } = useViaductData(cpackage, q1);
-  const chartData = data?.chartData || [];
-  const percComp = data?.percComp || 0;
-
-  // Define parameters
-  const marginTop = 0;
-  const marginLeft = 0;
-  const marginRight = 0;
-  const marginBottom = 0;
-  const paddingTop = 10;
-  const paddingLeft = 5;
-  const paddingRight = 5;
-  const paddingBottom = 0;
-  const chartIconPositionX = undefined;
-  const chartPaddingRightIconLabel = 15;
-
-  const chartBorderLineColor = "#00c5ff";
-  const chartBorderLineWidth = 0.4;
+  const chartData = data?.chartData ?? [];
+  const percComp = data?.percComp ?? 0;
 
   const new_fontSize = chartPanelwidth / 20;
   const new_valueSize = new_fontSize * 1.55;
@@ -107,11 +108,9 @@ const ChartViaduct = memo(() => {
   const new_axisFontSize = chartPanelwidth * 0.036;
   const new_imageSize = chartPanelwidth * 0.035;
   const new_asofDateSize = chartPanelwidth * 0.032;
-  // const new_resetfiler_buttonSize = chartPanelwidth * 0.05;
 
-  // Utility Chart
   useEffect(() => {
-    const root = rootSetter({ chartID: chartID });
+    const root = rootSetter({ chartID: CHART_ID });
     root.setThemes([]);
 
     const chart = root.container.children.push(
@@ -119,14 +118,7 @@ const ChartViaduct = memo(() => {
         panX: false,
         panY: false,
         layout: root.verticalLayout,
-        marginTop: marginTop,
-        marginLeft: marginLeft,
-        marginRight: marginRight,
-        marginBottom: marginBottom,
-        paddingTop: paddingTop,
-        paddingLeft: paddingLeft,
-        paddingRight: paddingRight,
-        paddingBottom: paddingBottom,
+        ...CHART_LAYOUT,
         scale: 1,
         height: am5.percent(100),
       }),
@@ -158,13 +150,13 @@ const ChartViaduct = memo(() => {
       statusArray: viastatus_q,
       statusField: via_status_f,
       seriesStatusColor: viastatus_q.map((c: any) => c.color),
-      strokeColor: chartBorderLineColor,
-      strokeWidth: chartBorderLineWidth,
+      strokeColor: CHART_BORDER_COLOR,
+      strokeWidth: CHART_BORDER_WIDTH,
       view: arcgisScene?.view,
       new_chartIconSize,
       new_axisFontSize,
-      chartIconPositionX,
-      chartPaddingRightIconLabel,
+      chartIconPositionX: CHART_ICON_POSITION_X,
+      chartPaddingRightIconLabel: CHART_PADDING_RIGHT_ICON_LABEL,
       legend,
       updateChartPanelwidth: setChartPanelwidth,
     }).chartRendererColumn();
@@ -233,7 +225,7 @@ const ChartViaduct = memo(() => {
       </div>
 
       <div
-        id={chartID}
+        id={CHART_ID}
         style={{
           height: "65vh",
           color: "white",

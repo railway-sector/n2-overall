@@ -5,7 +5,6 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import { dateUpdate, thousands_separators } from "../query";
 import {
   cp_f,
-  monitorLists,
   primaryLabelColor,
   util_status_f,
   util_status_q,
@@ -23,6 +22,25 @@ import type { ChartResponse } from "../interfaceKeys";
 import ChartStackColumnRender from "chart-stack-column-render";
 import ChartStackColumns from "chart-stack-column";
 import QueryExpressionLayers from "query-layers-expression";
+
+const CHART_ID = "utility-point-bar";
+
+// Static chart layout — doesn't depend on props/state, so keep it out of the component
+const CHART_LAYOUT = {
+  marginTop: 0,
+  marginLeft: 0,
+  marginRight: 0,
+  marginBottom: 0,
+  paddingTop: 10,
+  paddingLeft: 5,
+  paddingRight: 5,
+  paddingBottom: 0,
+} as const;
+
+const CHART_BORDER_COLOR = "#00c5ff";
+const CHART_BORDER_WIDTH = 0.4;
+const CHART_ICON_POSITION_X = undefined;
+const CHART_PADDING_RIGHT_ICON_LABEL = 25;
 
 //-----------------------//
 //     usetUtilityData   //
@@ -65,9 +83,9 @@ const ChartUtilityPoint = memo(() => {
   const { cpackage, utilityLinestats } = use(MyContext);
 
   //--- As of date
-  const { data: date } = useQuery<any>({
+  const { data: date } = useQuery({
     queryKey: ["As_Of_Date"],
-    queryFn: () => dateUpdate(monitorLists[3]),
+    queryFn: () => dateUpdate("Utility Relocation"),
     staleTime: Infinity,
   });
   const asofdate = date ?? "";
@@ -83,33 +101,22 @@ const ChartUtilityPoint = memo(() => {
   );
 
   const { data, isLoading } = useUtilityData(cpackage, q1);
-  const chartData = data?.chartData[0] || [];
-  const totalComp = data?.chartData && data?.chartData[3] + utilityLinestats[3];
-  const totaln = data?.chartData && data?.chartData[1] + utilityLinestats[1];
-  const percComp = ((totalComp / totaln) * 100).toFixed(0);
+  const chartData = data?.chartData?.[0] ?? [];
+
+  //--- Progress stats
+  const { totalComp, percComp } = useMemo(() => {
+    if (!data?.chartData) return { totalComp: 0, percComp: 0 };
+    const totalComp = data.chartData[3] + utilityLinestats[3];
+    const totaln = data.chartData[1] + utilityLinestats[1];
+    return {
+      totalComp,
+      percComp: ((totalComp / totaln) * 100).toFixed(0),
+    };
+  }, [data, utilityLinestats]);
 
   const legendRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const chartID = "utility-point-bar";
 
-  // Define parameters
-  const marginTop = 0;
-  const marginLeft = 0;
-  const marginRight = 0;
-  const marginBottom = 0;
-  const paddingTop = 10;
-  const paddingLeft = 5;
-  const paddingRight = 5;
-  const paddingBottom = 0;
-  const chartIconPositionX = undefined;
-  const chartPaddingRightIconLabel = 25;
-
-  const chartBorderLineColor = "#00c5ff";
-  const chartBorderLineWidth = 0.4;
-
-  // ************************************
-  //  Responsive Chart parameters
-  // ***********************************
   const new_fontSize = chartPanelwidth / 20;
   const new_valueSize = new_fontSize * 1.55;
   const new_chartIconSize = chartPanelwidth * 0.06;
@@ -118,7 +125,7 @@ const ChartUtilityPoint = memo(() => {
 
   // Utility point
   useEffect(() => {
-    const root = rootSetter({ chartID: chartID });
+    const root = rootSetter({ chartID: CHART_ID });
     root.setThemes([]);
 
     const chart = root.container.children.push(
@@ -126,14 +133,7 @@ const ChartUtilityPoint = memo(() => {
         panX: false,
         panY: false,
         layout: root.verticalLayout,
-        marginTop: marginTop,
-        marginLeft: marginLeft,
-        marginRight: marginRight,
-        marginBottom: marginBottom,
-        paddingTop: paddingTop,
-        paddingLeft: paddingLeft,
-        paddingRight: paddingRight,
-        paddingBottom: paddingBottom,
+        ...CHART_LAYOUT,
         scale: 1,
         height: am5.percent(100),
       }),
@@ -165,13 +165,13 @@ const ChartUtilityPoint = memo(() => {
       statusArray: util_status_q,
       statusField: util_status_f,
       seriesStatusColor: viastatus_q.map((c: any) => c.color),
-      strokeColor: chartBorderLineColor,
-      strokeWidth: chartBorderLineWidth,
+      strokeColor: CHART_BORDER_COLOR,
+      strokeWidth: CHART_BORDER_WIDTH,
       view: arcgisScene?.view,
       new_chartIconSize,
       new_axisFontSize,
-      chartIconPositionX,
-      chartPaddingRightIconLabel,
+      chartIconPositionX: CHART_ICON_POSITION_X,
+      chartPaddingRightIconLabel: CHART_PADDING_RIGHT_ICON_LABEL,
       legend,
       updateChartPanelwidth: setChartPanelwidth,
     }).chartRendererColumn();
@@ -243,7 +243,7 @@ const ChartUtilityPoint = memo(() => {
         POINT FEATURE:
       </div>
       <div
-        id={chartID}
+        id={CHART_ID}
         style={{
           height: "29vh",
           backgroundColor: "rgb(0,0,0,0)",

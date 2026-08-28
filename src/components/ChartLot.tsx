@@ -22,7 +22,6 @@ import {
   valueLabelColor,
   cp_f,
   lot_urgent_q,
-  monitorLists,
   lot_urgent_switch,
 } from "../uniqueValues";
 import "@arcgis/map-components/dist/components/arcgis-scene";
@@ -41,6 +40,11 @@ import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
 import QueryExpressionLayers from "query-layers-expression";
 
+const CHART_ID = "pie-two";
+const SERIES_SCALE = 220;
+const INNER_VALUE_FONT_SIZE = "1.1rem";
+const INNER_LABEL_FONT_SIZE = "0.45em";
+
 //--------------------------//
 //      useLotData          //
 //--------------------------//
@@ -52,6 +56,7 @@ function useLotData(
   hoField: string,
   baseFilter: any,
   urgentQuery: any,
+  lot_status_q2: any,
 ) {
   return useQuery<ChartResponse | any>({
     queryKey: [lot_status_f, lotLayer, cpackage, urgentQuery, baseFilter],
@@ -94,7 +99,7 @@ function useLotData(
       ] = await Promise.all([
         new ChartPieSeries({
           ...baseArgs,
-          statusList: lot_status_q,
+          statusList: lot_status_q2,
           statusField: statusField,
           statisticField: statusField,
         }).pieSeries(),
@@ -103,16 +108,10 @@ function useLotData(
         fieldStatistic({ ...baseArgs, statisticField: lot_id_f }),
 
         //--- Total affected area (m2)
-        fieldStatistic({
-          ...baseArgs2,
-          statisticField: afaField,
-        }),
+        fieldStatistic({ ...baseArgs2, statisticField: afaField }),
 
         //--- Total handed-over area (m2)
-        fieldStatistic({
-          ...baseArgs2,
-          statisticField: hoaField,
-        }),
+        fieldStatistic({ ...baseArgs2, statisticField: hoaField }),
 
         //--- Total number of handed-over
         fieldStatistic({
@@ -149,14 +148,23 @@ const LotChart = () => {
 
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const [urgentType, setUrgentType] = useState<any>(lot_urgent_switch[0]);
+  const [hoCheckbox, setHoCheckbox] = useState<any>(false);
+
+  //--- "With CNO" relabel — memoized since it's passed into the query key/args
+  const lot_status_q2 = useMemo(
+    () =>
+      lot_status_q.map((item) =>
+        item.value === 6 ? { ...item, category: "With CNO" } : item,
+      ),
+    [],
+  );
 
   //--- As of date
-  const { data: date } = useQuery<any>({
+  const { data: asofdate = "" } = useQuery({
     queryKey: ["As_Of_Date"],
-    queryFn: () => dateUpdate(monitorLists[0]),
+    queryFn: () => dateUpdate("Land Acquisition"),
     staleTime: Infinity,
   });
-  const asofdate = date ?? "";
 
   //--- Base filter
   const baseFilter = useMemo(
@@ -178,64 +186,59 @@ const LotChart = () => {
     lot_ho_f,
     baseFilter,
     urgent_qe,
+    lot_status_q2,
   );
 
-  //--- Call chart data
-  const chartData = data?.chartData || [];
-  const totalNumber = data?.totalNumber || 0;
-  const affectedArea = data?.affectedArea || 0;
-  const handedOverArea = data?.handedOverArea || 0;
-  const handedOverNumber = data?.handedOverNumber || 0;
-  const handedOverPercent = data?.handedOverPercent || 0;
+  const chartData = data?.chartData ?? [];
+  const totalNumber = data?.totalNumber ?? 0;
+  const affectedArea = data?.affectedArea ?? 0;
+  const handedOverArea = data?.handedOverArea ?? 0;
+  const handedOverNumber = data?.handedOverNumber ?? 0;
+  const handedOverPercent = data?.handedOverPercent ?? 0;
 
-  //------------------------------------------------------------//
-  //              Pie chart rendering declaration               //
-  //------------------------------------------------------------//
-  const new_fontSize = chartPanelwidth / 30;
-  const new_valueSize = chartPanelwidth / 19;
-  const new_sementedListSize = chartPanelwidth * 0.55;
-  const new_asofDateSize = chartPanelwidth * 0.03;
-  const seriesScale = 220;
-  const innerValueFontSize = "1.1rem";
-  const innerLabelFontSize = "0.45em";
+  // ************************************
+  //  Responsive Chart parameters
+  // ***********************************
+  const new_fontSize = chartPanelwidth ? chartPanelwidth / 30 : 0;
+  const new_valueSize = chartPanelwidth ? chartPanelwidth / 19 : 0;
+  const new_sementedListSize = chartPanelwidth ? chartPanelwidth * 0.55 : 0;
+  const new_asofDateSize = chartPanelwidth ? chartPanelwidth * 0.03 : 0;
 
   const pieSeriesRef = useRef<any>(null);
   const legendRef = useRef<any>(null);
   const chartRef = useRef<any>(null);
-  const chartID = "pie-two";
 
-  const [hoCheckbox, setHoCheckbox] = useState<any>(false);
-
+  //--- Highlight super-urgent lots
   useEffect(() => {
-    urgentType === lot_urgent_switch[1]
-      ? highlightLot({ layer: lotLayer, view: arcgisScene, qe: urgent_qe })
-      : highlightRemove();
+    if (urgentType === lot_urgent_switch[1]) {
+      highlightLot({ layer: lotLayer, view: arcgisScene, qe: urgent_qe });
+    } else {
+      highlightRemove();
+    }
   }, [urgentType]);
 
+  //--- Toggle handed-over layer visibility
   useEffect(() => {
     handedOverLotLayer.visible = hoCheckbox;
   }, [hoCheckbox]);
 
-  // Chart data and
+  //--- Zoom on package change, then draw chart
   const zoomFiltersRef = useRef(`${cpackage}`);
 
   useEffect(() => {
-    //--- Zoom after 1st render
     const currentZoomFilters = `${cpackage}`;
-
     if (currentZoomFilters !== zoomFiltersRef.current) {
       zoomFiltersRef.current = currentZoomFilters;
       zoomToLayer(lotLayer, arcgisScene?.view);
     }
 
-    const root = rootSetter({ chartID: chartID });
-
-    const chart = chartSetter({ root: root });
+    const root = rootSetter({ chartID: CHART_ID });
+    const chart = chartSetter({ root });
     chartRef.current = chart;
 
     const pieSeries = seriesSetter({
-      chart: chart,
-      root: root,
+      chart,
+      root,
       categoryField: "category",
       valueField: "value",
       legendLabelText: "{category}",
@@ -246,10 +249,9 @@ const LotChart = () => {
     pieSeriesRef.current = pieSeries;
     chart.series.push(pieSeries);
 
-    // Legend
     const legend = legendSetter({
-      chart: chart,
-      root: root,
+      chart,
+      root,
       centerX: 50,
       x: 50,
     });
@@ -257,7 +259,6 @@ const LotChart = () => {
     legend.setAll({ marginTop: -25 });
     legend.data.setAll(pieSeries.dataItems);
 
-    //--- Chart Render
     new ChartPieSeriesRender({
       chart,
       pieSeries,
@@ -269,23 +270,20 @@ const LotChart = () => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale,
+      seriesScale: SERIES_SCALE,
       innerLabel: "PRIVATE LOTS",
-      innerLabelFontSize,
-      innerValueFontSize,
+      innerLabelFontSize: INNER_LABEL_FONT_SIZE,
+      innerValueFontSize: INNER_VALUE_FONT_SIZE,
       layer: lotLayer,
-      statusArray: lot_status_q,
+      statusArray: lot_status_q2,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
-    if (!pieSeriesRef.current) return;
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+    pieSeries.data.setAll(chartData);
+    legend.data.setAll(pieSeries.dataItems);
 
-    return () => {
-      root.dispose();
-    };
+    return () => root.dispose();
   }, [chartData]);
 
   return (
@@ -327,7 +325,6 @@ const LotChart = () => {
           >
             TOTAL AFFECTED AREA
           </dt>
-          {/* #d3d3d3 */}
           <dd
             style={{
               color: valueLabelColor,
@@ -376,18 +373,16 @@ const LotChart = () => {
           }
         >
           {urgentType &&
-            lot_urgent_switch.map((priority, index) => {
-              return (
-                <calcite-segmented-control-item
-                  {...(urgentType === priority ? { checked: true } : {})}
-                  key={index}
-                  value={priority}
-                  id={priority}
-                >
-                  {priority}
-                </calcite-segmented-control-item>
-              );
-            })}
+            lot_urgent_switch.map((priority, index) => (
+              <calcite-segmented-control-item
+                {...(urgentType === priority ? { checked: true } : {})}
+                key={index}
+                value={priority}
+                id={priority}
+              >
+                {priority}
+              </calcite-segmented-control-item>
+            ))}
         </calcite-segmented-control>
       </div>
 
@@ -406,7 +401,7 @@ const LotChart = () => {
 
       {/* Lot Chart */}
       <div
-        id={chartID}
+        id={CHART_ID}
         style={{
           width: "100%",
           height: "57vh",
@@ -470,7 +465,6 @@ const LotChart = () => {
           >
             HANDED-OVER AREA
           </dt>
-          {/* #d3d3d3 */}
           <dd
             style={{
               color: valueLabelColor,
@@ -498,6 +492,6 @@ const LotChart = () => {
       </div>
     </>
   );
-}; // End of lotChartgs
+};
 
 export default LotChart;

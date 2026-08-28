@@ -22,12 +22,14 @@ import {
   pierHeadColumnLayer,
   meralco_tss10_groupLayer,
   stationLayer,
+  demolishedStrucLayer,
   sources,
 } from "../layers";
 import type { ArcgisSearch } from "@arcgis/map-components/components/arcgis-search";
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils";
 import { addLayersToMap } from "../query";
 import { useState } from "react";
+import UndergroundSwitch from "./UndergroundSwitch";
 
 export default function MapDisplay() {
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
@@ -59,6 +61,7 @@ export default function MapDisplay() {
       alignmentGroupLayer,
       handedOverLotLayer,
       stationLayer,
+      demolishedStrucLayer,
     ]);
 
     arcgisSearch.allPlaceholder = "LotID, StructureID, Chainage";
@@ -91,6 +94,9 @@ export default function MapDisplay() {
           <arcgis-search></arcgis-search>
         </arcgis-expand>
         <arcgis-zoom slot="bottom-right"></arcgis-zoom>
+
+        {/* Underground switch */}
+        <UndergroundSwitch />
       </arcgis-scene>
     </>
   );

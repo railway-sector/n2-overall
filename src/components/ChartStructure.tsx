@@ -1,15 +1,13 @@
 import { memo, use, useEffect, useMemo, useRef, useState } from "react";
 import { dateUpdate, fieldStatistic, thousands_separators } from "../query";
 import "../index.css";
-import {
-  primaryLabelColor,
-  str_status_q,
-  str_status_f,
-  valueLabelColor,
-  cp_f,
-} from "../uniqueValues";
+import { str_status_q, str_status_f, cp_f } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
-import { occupancyLayer, structureLayer } from "../layers";
+import {
+  demolishedStrucLayer,
+  occupancyLayer,
+  structureLayer,
+} from "../layers";
 import { useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import {
@@ -23,6 +21,12 @@ import { MyContext } from "../contexts/MyContext";
 import ChartPieSeries from "chart-pie-series";
 import { queryDefinitionExpression } from "../queryDefinition";
 import QueryExpressionLayers from "query-layers-expression";
+import StatBlock from "./statBlock";
+
+const CHART_ID = "structure-chart";
+const SERIES_SCALE = 220;
+const INNER_VALUE_FONT_SIZE = "1.2rem";
+const INNER_LABEL_FONT_SIZE = "0.45em";
 
 //--------------------------//
 //     useStructureData     //
@@ -51,7 +55,7 @@ function useStructureData(
         statisticType: "count" as const,
       };
 
-      const [chartData, totalNumber] = await Promise.all([
+      const [chartData, totalNumber, totalDemolish] = await Promise.all([
         new ChartPieSeries({
           ...baseArgs,
           where: q1.queryExpression(),
@@ -63,9 +67,17 @@ function useStructureData(
           ...baseArgs,
           where: new QueryExpressionLayers({ ...baseFilter }).queryExpression(),
         }),
+
+        fieldStatistic({
+          ...baseArgs,
+          where: new QueryExpressionLayers({
+            ...baseFilter,
+            qExpression: "Demolition = 1",
+          }).queryExpression(),
+        }),
       ]);
 
-      return { chartData, totalNumber, q1 };
+      return { chartData, totalNumber, totalDemolish, q1 };
     },
     staleTime: Infinity,
   });
@@ -79,30 +91,19 @@ function useStructureData(
 //--- (ChartMain) is rendered.
 const ChartStructure = memo(() => {
   const { cpackage } = use(MyContext);
-
-  const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
+  const [demolishCheckBox, setDemolishCheckBox] = useState<any>(false);
 
   //--- As of date
-  const { data: date } = useQuery<any>({
+  const { data: asofdate = "" } = useQuery({
     queryKey: ["As_Of_Date"],
-    queryFn: () => dateUpdate("Viaduct"),
+    queryFn: () => dateUpdate("Structure"),
     staleTime: Infinity,
   });
-  const asofdate = date ?? "";
 
-  //--- Chart parameters
-  const new_fontSize = chartPanelwidth / 22.3;
-  const new_valueSize = new_fontSize * 1.55;
-  const new_imageSize = chartPanelwidth * 0.03;
-  const new_asofDateSize = chartPanelwidth * 0.032;
-  const seriesScale = 220;
-  const innerValueFontSize = "1.2rem";
-  const innerLabelFontSize = "0.45em";
-
-  const pieSeriesRef = useRef<unknown | any | undefined>({});
-  const legendRef = useRef<unknown | any | undefined>({});
-  const chartID = "structure-chart";
+  useEffect(() => {
+    demolishedStrucLayer.visible = demolishCheckBox;
+  }, [demolishCheckBox]);
 
   //--- Base filter
   const baseFilter = useMemo(
@@ -119,18 +120,32 @@ const ChartStructure = memo(() => {
     str_status_f,
     baseFilter,
   );
+  const chartData = data?.chartData ?? [];
+  const totalNumber = data?.totalNumber ?? 0;
+  const totalDemolish = data?.totalDemolish ?? 0;
+  const percDemolished = totalNumber
+    ? Number(((totalDemolish / totalNumber) * 100).toFixed(0))
+    : 0;
 
-  //--- Call chart data
-  const chartData = data?.chartData || [];
-  const totalNumber = data?.totalNumber || 0;
+  // ************************************
+  //  Responsive Chart parameters
+  // ***********************************
+  const fontSize = chartPanelwidth ? chartPanelwidth / 22.3 : 0;
+  const valueSize = fontSize * 1.55;
+  const imageSize = chartPanelwidth ? chartPanelwidth * 0.03 : 0;
+  const new_asofDateSize = chartPanelwidth ? chartPanelwidth * 0.032 : 0;
+
+  const pieSeriesRef = useRef<unknown | any | undefined>({});
+  const legendRef = useRef<unknown | any | undefined>({});
 
   useEffect(() => {
-    const root = rootSetter({ chartID: chartID });
-    const chart = chartSetter({ root: root });
+    const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+    const root = rootSetter({ chartID: CHART_ID });
+    const chart = chartSetter({ root });
 
     const pieSeries = seriesSetter({
-      chart: chart,
-      root: root,
+      chart,
+      root,
       categoryField: "category",
       valueField: "value",
       legendLabelText: "{category}",
@@ -142,18 +157,17 @@ const ChartStructure = memo(() => {
     chart.series.push(pieSeries);
 
     const legend = legendSetter({
-      chart: chart,
-      root: root,
+      chart,
+      root,
       centerX: 50,
       x: 50,
     });
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    // Render chart
     new ChartPieSeriesRender({
       chart,
-      pieSeries: pieSeries,
+      pieSeries,
       legend,
       root,
       qChart: data?.q1,
@@ -162,23 +176,20 @@ const ChartStructure = memo(() => {
       view: arcgisScene?.view,
       updateChartPanelwidth: setChartPanelwidth,
       data: chartData,
-      seriesScale,
+      seriesScale: SERIES_SCALE,
       innerLabel: "STRUCTURES",
-      innerLabelFontSize,
-      innerValueFontSize,
+      innerLabelFontSize: INNER_LABEL_FONT_SIZE,
+      innerValueFontSize: INNER_VALUE_FONT_SIZE,
       layer: structureLayer,
       statusArray: str_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
     }).chartDataRenderer();
 
-    if (!pieSeriesRef.current) return;
-    pieSeriesRef.current?.data.setAll(chartData);
-    legendRef.current?.data.setAll(pieSeriesRef.current.dataItems);
+    pieSeries.data.setAll(chartData);
+    legend.data.setAll(pieSeries.dataItems);
 
-    return () => {
-      root.dispose();
-    };
+    return () => root.dispose();
   }, [chartData]);
 
   return (
@@ -188,40 +199,25 @@ const ChartStructure = memo(() => {
           display: "flex",
           marginLeft: "15px",
           marginRight: "15px",
-          justifyContent: "space-between",
+          justifyContent: "center",
+          gap: "25%",
         }}
       >
         <img
           src="https://EijiGorilla.github.io/Symbols/House_Logo.svg"
           alt="Structure Logo"
-          height={`${new_imageSize}%`}
-          width={`${new_imageSize}%`}
+          height={`${imageSize}%`}
+          width={`${imageSize}%`}
           style={{ paddingTop: "2px", opacity: isLoading ? 0 : 1 }}
         />
-        <dl style={{ alignItems: "center" }}>
-          <dt
-            style={{
-              color: primaryLabelColor,
-              fontSize: `${new_fontSize}px`,
-              marginRight: "25px",
-            }}
-          >
-            TOTAL STRUCTURES
-          </dt>
-          <dd
-            style={{
-              color: valueLabelColor,
-              fontSize: `${new_valueSize}px`,
-              fontWeight: "bold",
-              fontFamily: "calibri",
-              lineHeight: "1.2",
-              margin: "auto",
-              opacity: isLoading ? 0 : 1,
-            }}
-          >
-            {thousands_separators(totalNumber)}
-          </dd>
-        </dl>
+        <StatBlock
+          label="TOTAL STRUCTURES"
+          value={thousands_separators(totalNumber)}
+          fontSize={fontSize}
+          valueSize={valueSize}
+          isLoading={isLoading}
+          labelMarginRight="25px"
+        />
       </div>
 
       <div
@@ -237,15 +233,48 @@ const ChartStructure = memo(() => {
 
       {/* Structure Chart */}
       <div
-        id={chartID}
+        id={CHART_ID}
         style={{
           height: "60vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
-          marginTop: "10%",
+          marginTop: "2%",
           opacity: isLoading ? 0 : 1,
         }}
       ></div>
+
+      {/* Total Demolished structures */}
+      <div
+        style={{
+          display: "flex",
+          marginLeft: "3%",
+          marginRight: "5%",
+          justifyContent: "center",
+          gap: "25%",
+          marginTop: "1%",
+        }}
+      >
+        <div
+          style={{ backgroundColor: "green", height: "0", marginTop: "13px" }}
+        >
+          <calcite-checkbox
+            name="demolished-structures-checkbox"
+            label="VIEW"
+            scale="l"
+            oncalciteCheckboxChange={() =>
+              setDemolishCheckBox((prev: any) => !prev)
+            }
+          ></calcite-checkbox>
+        </div>
+        <StatBlock
+          label="TOTAL DEMOLISHED"
+          value={`${percDemolished}% (${thousands_separators(totalDemolish)})`}
+          fontSize={fontSize}
+          valueSize={valueSize}
+          isLoading={isLoading}
+          textAlign="center"
+        />
+      </div>
     </>
   );
 });

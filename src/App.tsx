@@ -5,7 +5,6 @@ import ActionPanel from "./components/ActionPanel";
 import Header from "./components/Header";
 import ChartMain from "./components/ChartMain";
 import { cpackages } from "./uniqueValues";
-import UndergroundSwitch from "./components/UndergroundSwitch";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { authenticate } from "./autho";
 
@@ -47,7 +46,6 @@ export function App(): React.JSX.Element {
             }}
           >
             <QueryClientProvider client={queryClient}>
-              <UndergroundSwitch />
               <ChartMain />
               <ActionPanel />
               <MapDisplay />
