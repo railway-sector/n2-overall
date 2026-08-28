@@ -1,5 +1,10 @@
 import { use, useEffect, useMemo, useRef, useState } from "react";
-import { handedOverLotLayer, lotLayer } from "../layers";
+import {
+  handedOverLotLayer,
+  lotLayer,
+  lotPartialPaymentLayer,
+  lotPteLayer,
+} from "../layers";
 import {
   dateUpdate,
   fieldStatistic,
@@ -75,7 +80,12 @@ function useLotData(
 
       queryDefinitionExpression({
         queryExpression: q1.queryExpression(),
-        featureLayer: [lotLayer, handedOverLotLayer],
+        featureLayer: [
+          lotLayer,
+          handedOverLotLayer,
+          lotPartialPaymentLayer,
+          lotPteLayer,
+        ],
       });
 
       const baseArgs = {
