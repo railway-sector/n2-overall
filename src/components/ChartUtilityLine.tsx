@@ -5,7 +5,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { queryDefinitionExpression } from "../queryDefinition";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import { legendSetter, rootSetter } from "../chartSetter";
 import ChartStackColumnRender from "chart-stack-column-render";
@@ -77,7 +77,10 @@ function useUtilityData(
         perc: chartData[2] || 0,
       };
     },
-    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 

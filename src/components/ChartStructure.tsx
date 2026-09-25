@@ -8,7 +8,7 @@ import {
   occupancyLayer,
   structureLayer,
 } from "../layers";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import {
   chartSetter,
@@ -22,11 +22,6 @@ import ChartPieSeries from "chart-pie-series";
 import { queryDefinitionExpression } from "../queryDefinition";
 import QueryExpressionLayers from "query-layers-expression";
 import StatBlock from "./statBlock";
-
-const CHART_ID = "structure-chart";
-const SERIES_SCALE = 220;
-const INNER_VALUE_FONT_SIZE = "1.2rem";
-const INNER_LABEL_FONT_SIZE = "0.45em";
 
 //--------------------------//
 //     useStructureData     //
@@ -77,9 +72,17 @@ function useStructureData(
         }),
       ]);
 
-      return { chartData, totalNumber, totalDemolish, q1 };
+      //--- Demolished percent
+      const percDemolished = Number(
+        ((totalDemolish / totalNumber) * 100).toFixed(0),
+      );
+
+      return { chartData, totalNumber, totalDemolish, percDemolished, q1 };
     },
-    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -91,6 +94,8 @@ function useStructureData(
 //--- (ChartMain) is rendered.
 const ChartStructure = memo(() => {
   const { cpackage } = use(MyContext);
+
+  const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
   const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const [demolishCheckBox, setDemolishCheckBox] = useState<any>(false);
 
@@ -121,11 +126,9 @@ const ChartStructure = memo(() => {
     baseFilter,
   );
   const chartData = data?.chartData ?? [];
-  const totalNumber = data?.totalNumber ?? 0;
+  const totalNumber = thousands_separators(data?.totalNumber) || 0;
   const totalDemolish = data?.totalDemolish ?? 0;
-  const percDemolished = totalNumber
-    ? Number(((totalDemolish / totalNumber) * 100).toFixed(0))
-    : 0;
+  const percDemolished = data?.percDemolished ?? 0;
 
   // ************************************
   //  Responsive Chart parameters
@@ -133,19 +136,44 @@ const ChartStructure = memo(() => {
   const fontSize = chartPanelwidth ? chartPanelwidth / 22.3 : 0;
   const valueSize = fontSize * 1.55;
   const imageSize = chartPanelwidth ? chartPanelwidth * 0.03 : 0;
-  const new_asofDateSize = chartPanelwidth ? chartPanelwidth * 0.032 : 0;
+  const asofDateSize = chartPanelwidth ? chartPanelwidth * 0.032 : 0;
+  const seriesScale = 220;
+  const innerValueFontSize = "1.1rem";
+  const innerLabelFontSize = "0.45em";
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
+  const renderRef = useRef<ChartPieSeriesRender | null>(null);
+  const chartID = "structure-chart";
+
+  //--- Keep click-handler-relevant values fresh without rebuilding the
+  //    chart. view lives here too (not passed statically to the
+  //    renderer) since arcgis-scene's view may not be ready on first
+  //    mount.
+  const configRef = useRef({
+    qChart: data?.q1,
+    q2Expression: undefined,
+    status_field: str_status_f,
+    view: arcgisScene?.view,
+  });
 
   useEffect(() => {
-    const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
-    const root = rootSetter({ chartID: CHART_ID });
-    const chart = chartSetter({ root });
+    configRef.current = {
+      qChart: data?.q1,
+      q2Expression: undefined,
+      status_field: str_status_f,
+      view: arcgisScene?.view,
+    };
+  }, [data, str_status_f, arcgisScene]);
+
+  //--- Pie Chart Renderer - created ONCE (mount only)
+  useEffect(() => {
+    const root = rootSetter({ chartID: chartID });
+    const chart = chartSetter({ root: root });
 
     const pieSeries = seriesSetter({
-      chart,
-      root,
+      chart: chart,
+      root: root,
       categoryField: "category",
       valueField: "value",
       legendLabelText: "{category}",
@@ -157,40 +185,56 @@ const ChartStructure = memo(() => {
     chart.series.push(pieSeries);
 
     const legend = legendSetter({
-      chart,
-      root,
+      chart: chart,
+      root: root,
       centerX: 50,
       x: 50,
     });
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    new ChartPieSeriesRender({
+    //--- NOTE: no `view` here — it's read live from configRef.current
+    //    inside chartrender.ts, since arcgis-scene may not have a
+    //    ready `.view` yet at this point.
+    const renderer = new ChartPieSeriesRender({
       chart,
       pieSeries,
       legend,
       root,
-      qChart: data?.q1,
-      q2Expression: undefined,
-      status_field: str_status_f,
-      view: arcgisScene?.view,
+      configRef,
       updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      seriesScale: SERIES_SCALE,
+      data: [],
+      seriesScale,
+      innerValue: totalNumber,
       innerLabel: "STRUCTURES",
-      innerLabelFontSize: INNER_LABEL_FONT_SIZE,
-      innerValueFontSize: INNER_VALUE_FONT_SIZE,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: structureLayer,
       statusArray: str_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
-    }).chartDataRenderer();
+    });
+    renderRef.current = renderer;
+    renderRef.current.chartDataRenderer();
 
-    pieSeries.data.setAll(chartData);
-    legend.data.setAll(pieSeries.dataItems);
+    return () => {
+      root.dispose();
+      renderRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount-once — do not add dependencies here
 
-    return () => root.dispose();
-  }, [chartData]);
+  //--- Push new data / inner value / affected-area figures into the
+  //    already-mounted chart. No dispose, no rebuild -> no blink.
+  //    NOTE: affectedAreaValue is NOT called here directly — it's
+  //    registered once inside chartrender.ts and reads live data via
+  //    closures, which updateData() keeps in sync. Calling it here on
+  //    every render would both miss the first paint and stack
+  //    duplicate adapters.
+  useEffect(() => {
+    if (!renderRef.current) return;
+    renderRef.current.updateData(chartData, totalNumber, str_status_q);
+  }, [chartData, totalNumber, str_status_q]);
 
   return (
     <>
@@ -223,7 +267,7 @@ const ChartStructure = memo(() => {
       <div
         style={{
           color: "gray",
-          fontSize: `${new_asofDateSize}px`,
+          fontSize: `${asofDateSize}px`,
           float: "right",
           marginRight: "5px",
         }}
@@ -233,7 +277,7 @@ const ChartStructure = memo(() => {
 
       {/* Structure Chart */}
       <div
-        id={CHART_ID}
+        id={chartID}
         style={{
           height: "60vh",
           backgroundColor: "rgb(0,0,0,0)",

@@ -39,16 +39,11 @@ import {
   rootSetter,
   seriesSetter,
 } from "../chartSetter";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
 import QueryExpressionLayers from "query-layers-expression";
-
-const CHART_ID = "pie-two";
-const SERIES_SCALE = 220;
-const INNER_VALUE_FONT_SIZE = "1.1rem";
-const INNER_LABEL_FONT_SIZE = "0.45em";
 
 //--------------------------//
 //      useLotData          //
@@ -64,7 +59,15 @@ function useLotData(
   lot_status_q2: any,
 ) {
   return useQuery<ChartResponse | any>({
-    queryKey: [lot_status_f, lotLayer, cpackage, urgentQuery, baseFilter],
+    queryKey: [
+      statusField,
+      lot_status_q2,
+      hoaField,
+      lotLayer,
+      cpackage,
+      urgentQuery,
+      baseFilter,
+    ],
     queryFn: async () => {
       const q1 = new QueryExpressionLayers({
         ...baseFilter,
@@ -103,6 +106,7 @@ function useLotData(
       const [
         chartData,
         totalNumber,
+        privateLots,
         affectedArea,
         handedOverArea,
         handedOverNumber,
@@ -116,6 +120,14 @@ function useLotData(
 
         //--- Total number of lots (public + private)
         fieldStatistic({ ...baseArgs, statisticField: lot_id_f }),
+
+        //--- Total number of private lots
+        fieldStatistic({
+          where: `${q1.queryExpression()} AND ${statusField} >= 1`,
+          layer: lotLayer,
+          statisticField: statusField,
+          statisticType: "count",
+        }),
 
         //--- Total affected area (m2)
         fieldStatistic({ ...baseArgs2, statisticField: afaField }),
@@ -140,6 +152,7 @@ function useLotData(
       return {
         chartData,
         totalNumber,
+        privateLots,
         affectedArea,
         handedOverArea,
         handedOverNumber,
@@ -147,7 +160,10 @@ function useLotData(
         query: q1,
       };
     },
-    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -201,6 +217,7 @@ const LotChart = () => {
 
   const chartData = data?.chartData ?? [];
   const totalNumber = data?.totalNumber ?? 0;
+  const privateLots = thousands_separators(data?.privateLots) ?? 0;
   const affectedArea = data?.affectedArea ?? 0;
   const handedOverArea = data?.handedOverArea ?? 0;
   const handedOverNumber = data?.handedOverNumber ?? 0;
@@ -209,14 +226,19 @@ const LotChart = () => {
   // ************************************
   //  Responsive Chart parameters
   // ***********************************
-  const new_fontSize = chartPanelwidth ? chartPanelwidth / 30 : 0;
-  const new_valueSize = chartPanelwidth ? chartPanelwidth / 19 : 0;
-  const new_sementedListSize = chartPanelwidth ? chartPanelwidth * 0.55 : 0;
-  const new_asofDateSize = chartPanelwidth ? chartPanelwidth * 0.03 : 0;
+  const fontSize = chartPanelwidth ? chartPanelwidth / 30 : 0;
+  const valueSize = chartPanelwidth ? chartPanelwidth / 19 : 0;
+  const sementedListSize = chartPanelwidth ? chartPanelwidth * 0.55 : 0;
+  const asofDateSize = chartPanelwidth ? chartPanelwidth * 0.03 : 0;
+  const seriesScale = 220;
+  const innerValueFontSize = "1.1rem";
+  const innerLabelFontSize = "0.45em";
 
   const pieSeriesRef = useRef<any>(null);
   const legendRef = useRef<any>(null);
   const chartRef = useRef<any>(null);
+  const rendererRef = useRef<ChartPieSeriesRender | null>(null);
+  const chartID = "pie-two";
 
   //--- Highlight super-urgent lots
   useEffect(() => {
@@ -237,13 +259,36 @@ const LotChart = () => {
 
   useEffect(() => {
     const currentZoomFilters = `${cpackage}`;
+
     if (currentZoomFilters !== zoomFiltersRef.current) {
       zoomFiltersRef.current = currentZoomFilters;
       zoomToLayer(lotLayer, arcgisScene?.view);
     }
+  }, [chartData]);
 
-    const root = rootSetter({ chartID: CHART_ID });
-    const chart = chartSetter({ root });
+  //--- Keep click-handler-relevant values fresh without rebuilding the
+  //    chart. view lives here too (not passed statically to the
+  //    renderer) since arcgis-scene's view may not be ready on first
+  //    mount.
+  const configRef = useRef({
+    qChart: data?.query,
+    q2Expression: urgent_qe,
+    status_field: lot_status_f,
+    view: arcgisScene?.view,
+  });
+  useEffect(() => {
+    configRef.current = {
+      qChart: data?.query,
+      q2Expression: urgent_qe,
+      status_field: lot_status_f,
+      view: arcgisScene?.view,
+    };
+  }, [data, urgent_qe, lot_status_f, arcgisScene]);
+
+  //---  Pie Chart Renderer — created ONCE (mount only)
+  useEffect(() => {
+    const root = rootSetter({ chartID: chartID });
+    const chart = chartSetter({ root: root, y: 10 });
     chartRef.current = chart;
 
     const pieSeries = seriesSetter({
@@ -264,37 +309,58 @@ const LotChart = () => {
       root,
       centerX: 50,
       x: 50,
+      scale: 1.0,
     });
     legendRef.current = legend;
-    legend.setAll({ marginTop: -25 });
+    legend.setAll({ marginBottom: 10 });
     legend.data.setAll(pieSeries.dataItems);
 
-    new ChartPieSeriesRender({
+    //--- NOTE: no `view` here — it's read live from configRef.current
+    //    inside chartrender.ts, since arcgis-scene may not have a
+    //    ready `.view` yet at this point.
+    const renderer = new ChartPieSeriesRender({
       chart,
       pieSeries,
       legend,
       root,
-      qChart: data?.query,
-      q2Expression: urgent_qe,
-      status_field: lot_status_f,
-      view: arcgisScene?.view,
+      configRef,
       updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      seriesScale: SERIES_SCALE,
+      data: [],
+      seriesScale,
+      innerValue: privateLots,
       innerLabel: "PRIVATE LOTS",
-      innerLabelFontSize: INNER_LABEL_FONT_SIZE,
-      innerValueFontSize: INNER_VALUE_FONT_SIZE,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: lotLayer,
       statusArray: lot_status_q2,
       bkg_color_switch: false,
       seriesFillHash: undefined,
-    }).chartDataRenderer();
+    });
+    rendererRef.current = renderer;
+    rendererRef.current.chartDataRenderer();
 
-    pieSeries.data.setAll(chartData);
-    legend.data.setAll(pieSeries.dataItems);
+    return () => {
+      root.dispose();
+      rendererRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount-once — do not add dependencies here
 
-    return () => root.dispose();
-  }, [chartData]);
+  //--- Push new data / inner value / affected-area figures into the
+  //    already-mounted chart. No dispose, no rebuild -> no blink.
+  //    NOTE: affectedAreaValue is NOT called here directly — it's
+  //    registered once inside chartrender.ts and reads live data via
+  //    closures, which updateData() keeps in sync. Calling it here on
+  //    every render would both miss the first paint and stack
+  //    duplicate adapters.
+  useEffect(() => {
+    if (!rendererRef.current) return;
+    rendererRef.current.updateData(
+      chartData,
+      privateLots,
+      lot_status_q2.map((f: any) => f.category),
+    );
+  }, [chartData, privateLots]);
 
   return (
     <>
@@ -309,15 +375,13 @@ const LotChart = () => {
         }}
       >
         <dl style={{ alignItems: "center" }}>
-          <dt
-            style={{ color: primaryLabelColor, fontSize: `${new_fontSize}px` }}
-          >
+          <dt style={{ color: primaryLabelColor, fontSize: `${fontSize}px` }}>
             TOTAL LOTS
           </dt>
           <dd
             style={{
               color: valueLabelColor,
-              fontSize: `${new_valueSize}px`,
+              fontSize: `${valueSize}px`,
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
@@ -330,15 +394,13 @@ const LotChart = () => {
           </dd>
         </dl>
         <dl style={{ alignItems: "center" }}>
-          <dt
-            style={{ color: primaryLabelColor, fontSize: `${new_fontSize}px` }}
-          >
+          <dt style={{ color: primaryLabelColor, fontSize: `${fontSize}px` }}>
             TOTAL AFFECTED AREA
           </dt>
           <dd
             style={{
               color: valueLabelColor,
-              fontSize: `${new_valueSize}px`,
+              fontSize: `${valueSize}px`,
               fontFamily: "calibri",
               lineHeight: "1.2",
               margin: "auto",
@@ -348,9 +410,7 @@ const LotChart = () => {
             }}
           >
             {thousands_separators(affectedArea.toFixed(0))}
-            <label
-              style={{ fontWeight: "normal", fontSize: `${new_fontSize}px` }}
-            >
+            <label style={{ fontWeight: "normal", fontSize: `${fontSize}px` }}>
               {" "}
               m
             </label>
@@ -365,7 +425,7 @@ const LotChart = () => {
         <div
           style={{
             marginLeft: "15px",
-            fontSize: `${new_fontSize}px`,
+            fontSize: `${fontSize}px`,
             color: primaryLabelColor,
             marginTop: "auto",
             marginBottom: "auto",
@@ -377,7 +437,7 @@ const LotChart = () => {
         <calcite-segmented-control
           scale="s"
           width="full"
-          style={{ width: `${new_sementedListSize}px`, marginBottom: "auto" }}
+          style={{ width: `${sementedListSize}px`, marginBottom: "auto" }}
           oncalciteSegmentedControlChange={(event: any) =>
             setUrgentType(event.target.selectedItem.id)
           }
@@ -399,7 +459,7 @@ const LotChart = () => {
       <div
         style={{
           color: "gray",
-          fontSize: `${new_asofDateSize}px`,
+          fontSize: `${asofDateSize}px`,
           float: "right",
           marginRight: "1%",
           marginTop: "1.5%",
@@ -411,7 +471,7 @@ const LotChart = () => {
 
       {/* Lot Chart */}
       <div
-        id={CHART_ID}
+        id={chartID}
         style={{
           width: "100%",
           height: "57vh",
@@ -449,15 +509,13 @@ const LotChart = () => {
           ></calcite-checkbox>
         </div>
         <dl style={{ alignItems: "center" }}>
-          <dt
-            style={{ color: primaryLabelColor, fontSize: `${new_fontSize}px` }}
-          >
+          <dt style={{ color: primaryLabelColor, fontSize: `${fontSize}px` }}>
             TOTAL HANDED-OVER
           </dt>
           <dd
             style={{
               color: valueLabelColor,
-              fontSize: `${new_valueSize}px`,
+              fontSize: `${valueSize}px`,
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
@@ -470,15 +528,13 @@ const LotChart = () => {
           </dd>
         </dl>
         <dl style={{ alignItems: "center" }}>
-          <dt
-            style={{ color: primaryLabelColor, fontSize: `${new_fontSize}px` }}
-          >
+          <dt style={{ color: primaryLabelColor, fontSize: `${fontSize}px` }}>
             HANDED-OVER AREA
           </dt>
           <dd
             style={{
               color: valueLabelColor,
-              fontSize: `${new_valueSize}px`,
+              fontSize: `${valueSize}px`,
               fontFamily: "calibri",
               lineHeight: "1.2",
               margin: "auto",
@@ -488,9 +544,7 @@ const LotChart = () => {
             }}
           >
             {thousands_separators(handedOverArea.toFixed(0))}
-            <label
-              style={{ fontWeight: "normal", fontSize: `${new_fontSize}px` }}
-            >
+            <label style={{ fontWeight: "normal", fontSize: `${fontSize}px` }}>
               {" "}
               m
             </label>

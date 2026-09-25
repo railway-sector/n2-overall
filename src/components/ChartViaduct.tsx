@@ -10,7 +10,7 @@ import { ArcgisScene } from "@arcgis/map-components/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { queryDefinitionExpression } from "../queryDefinition";
 import { legendSetter, rootSetter } from "../chartSetter";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import { dateUpdate } from "../query";
 import ChartStackColumnRender from "chart-stack-column-render";
@@ -69,7 +69,10 @@ function useViaductData(cpackage: string, query: any) {
         percComp: chartData[2] || 0,
       };
     },
-    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 

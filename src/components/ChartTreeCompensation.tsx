@@ -4,7 +4,7 @@ import { cp_f, treem_status_f, treem_status_q } from "../uniqueValues";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 import { MyContext } from "../contexts/MyContext";
 import { queryDefinitionExpression } from "../queryDefinition";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ChartResponse } from "../interfaceKeys";
 import {
   chartSetter,
@@ -15,11 +15,7 @@ import {
 import ChartPieSeriesRender from "chart-pie-series-render";
 import ChartPieSeries from "chart-pie-series";
 import QueryExpressionLayers from "query-layers-expression";
-
-const CHART_ID = "pie-compen";
-const SERIES_SCALE = 220;
-const INNER_VALUE_FONT_SIZE = "0.75rem";
-const INNER_LABEL_FONT_SIZE = "0.45em";
+import { fieldStatistic, thousands_separators } from "../query";
 
 //--------------------------//
 //      useTreeData         //
@@ -33,23 +29,40 @@ function useTreeData(cpackage: any, query: any) {
         featureLayer: [treeCompensationLayer],
       });
 
-      const chartData = await new ChartPieSeries({
+      const baseArgs = {
         layer: treeCompensationLayer,
         statisticField: "OBJECTID",
         statisticType: "count" as const,
-        where: `${query.queryExpression()} AND ${treem_status_f} >= 1`,
-        statusList: treem_status_q,
-        statusField: treem_status_f,
-      }).pieSeries();
+      };
 
-      return { chartData };
+      const [chartData, totalTrees] = await Promise.all([
+        await new ChartPieSeries({
+          ...baseArgs,
+          where: `${query.queryExpression()} AND ${treem_status_f} >= 1`,
+          statusList: treem_status_q,
+          statusField: treem_status_f,
+        }).pieSeries(),
+
+        fieldStatistic({
+          ...baseArgs,
+          where: `${query.queryExpression()} AND ${treem_status_f} >= 1`,
+        }),
+      ]);
+
+      return { chartData, totalTrees };
     },
+    placeholderData: keepPreviousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
 const ChartTreeCompensation = memo(() => {
-  const [, setChartPanelwidth] = useState<any>();
   const { cpackage } = use(MyContext);
+
+  const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+  const [_chartPanelwidth, setChartPanelwidth] = useState<any>();
 
   const q1 = useMemo(
     () =>
@@ -62,20 +75,46 @@ const ChartTreeCompensation = memo(() => {
 
   const { data, isLoading } = useTreeData(cpackage, q1);
   const chartData = data?.chartData ?? [];
+  const totalTrees = thousands_separators(data?.totalTrees ?? 0);
 
   const pieSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
+  const renderRef = useRef<ChartPieSeriesRender | null>(null);
   const chartRef = useRef<unknown | any | undefined>({});
+  const chartID = "chart-tree-compensation";
+
+  const seriesScale = 220;
+  const innerValueFontSize = "0.75rem";
+  const innerLabelFontSize = "0.45em";
+
+  //--- Keep click-handler-relevant values fresh without rebuilding the
+  //    chart. view lives here too (not passed statically to the
+  //    renderer) since arcgis-scene's view may not be ready on first
+  //    mount.
+  const configRef = useRef({
+    qChart: q1,
+    q2Expression: undefined,
+    status_field: treem_status_f,
+    view: arcgisScene?.view,
+  });
 
   useEffect(() => {
-    const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
-    const root = rootSetter({ chartID: CHART_ID });
-    const chart = chartSetter({ root });
-    chartRef.current = chart;
+    configRef.current = {
+      qChart: q1,
+      q2Expression: undefined,
+      status_field: treem_status_f,
+      view: arcgisScene?.view,
+    };
+  }, [data, treem_status_f, arcgisScene]);
 
+  //--- Pie Chart Renderer - created ONCE (mount only)
+  useEffect(() => {
+    const root = rootSetter({ chartID: chartID });
+    const chart = chartSetter({ root: root, centerY: 25, y: 10 });
+    chartRef.current = chart;
     const pieSeries = seriesSetter({
-      chart,
-      root,
+      chart: chart,
+      root: root,
       categoryField: "category",
       valueField: "value",
       legendLabelText: "{category}",
@@ -88,8 +127,8 @@ const ChartTreeCompensation = memo(() => {
     chart.series.push(pieSeries);
 
     const legend = legendSetter({
-      chart,
-      root,
+      chart: chart,
+      root: root,
       centerX: 50,
       x: 50,
       marginTop: -15,
@@ -97,36 +136,52 @@ const ChartTreeCompensation = memo(() => {
     legendRef.current = legend;
     legend.data.setAll(pieSeries.dataItems);
 
-    new ChartPieSeriesRender({
+    //--- NOTE: no `view` here — it's read live from configRef.current
+    //    inside chartrender.ts, since arcgis-scene may not have a
+    //    ready `.view` yet at this point.
+    const renderer = new ChartPieSeriesRender({
       chart,
       pieSeries,
       legend,
       root,
-      qChart: q1,
-      q2Expression: undefined,
-      status_field: treem_status_f,
-      view: arcgisScene?.view,
+      configRef,
       updateChartPanelwidth: setChartPanelwidth,
-      data: chartData,
-      seriesScale: SERIES_SCALE,
+      data: [],
+      seriesScale,
+      innerValue: totalTrees,
       innerLabel: "TREES",
-      innerLabelFontSize: INNER_LABEL_FONT_SIZE,
-      innerValueFontSize: INNER_VALUE_FONT_SIZE,
+      innerLabelFontSize,
+      innerValueFontSize,
       layer: treeCompensationLayer,
       statusArray: treem_status_q,
       bkg_color_switch: false,
       seriesFillHash: undefined,
-    }).chartDataRenderer();
+    });
+    renderRef.current = renderer;
+    renderRef.current.chartDataRenderer();
 
-    pieSeries.data.setAll(chartData);
-    legend.data.setAll(pieSeries.dataItems);
+    return () => {
+      root.dispose();
+      renderRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount-once — do not add dependencies here
 
-    return () => root.dispose();
-  }, [chartData]);
+  //--- Push new data / inner value / affected-area figures into the
+  //    already-mounted chart. No dispose, no rebuild -> no blink.
+  //    NOTE: affectedAreaValue is NOT called here directly — it's
+  //    registered once inside chartrender.ts and reads live data via
+  //    closures, which updateData() keeps in sync. Calling it here on
+  //    every render would both miss the first paint and stack
+  //    duplicate adapters.
+  useEffect(() => {
+    if (!renderRef.current) return;
+    renderRef.current.updateData(chartData, totalTrees, treem_status_q);
+  }, [chartData, totalTrees, treem_status_q]);
 
   return (
     <div
-      id={CHART_ID}
+      id={chartID}
       style={{
         height: "34vh",
         backgroundColor: "rgb(0,0,0,0)",
