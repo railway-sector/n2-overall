@@ -50,34 +50,49 @@ function useStructureData(
         statisticType: "count" as const,
       };
 
-      const [chartData, totalNumber, totalDemolish] = await Promise.all([
-        new ChartPieSeries({
-          ...baseArgs,
-          where: q1.queryExpression(),
-          statusList: str_status_q,
-          statusField: statusField,
-        }).pieSeries(),
+      const [chartData, totalNumber, totalStructures, totalDemolish] =
+        await Promise.all([
+          new ChartPieSeries({
+            ...baseArgs,
+            where: q1.queryExpression(),
+            statusList: str_status_q,
+            statusField: statusField,
+          }).pieSeries(),
 
-        fieldStatistic({
-          ...baseArgs,
-          where: new QueryExpressionLayers({ ...baseFilter }).queryExpression(),
-        }),
+          fieldStatistic({
+            ...baseArgs,
+            where: new QueryExpressionLayers({
+              ...baseFilter,
+            }).queryExpression(),
+          }),
 
-        fieldStatistic({
-          ...baseArgs,
-          where: new QueryExpressionLayers({
-            ...baseFilter,
-            qExpression: "Demolition = 1",
-          }).queryExpression(),
-        }),
-      ]);
+          fieldStatistic({
+            ...baseArgs,
+            where: q1.queryExpression(),
+          }),
+
+          fieldStatistic({
+            ...baseArgs,
+            where: new QueryExpressionLayers({
+              ...baseFilter,
+              qExpression: "Demolition = 1",
+            }).queryExpression(),
+          }),
+        ]);
 
       //--- Demolished percent
       const percDemolished = Number(
         ((totalDemolish / totalNumber) * 100).toFixed(0),
       );
 
-      return { chartData, totalNumber, totalDemolish, percDemolished, q1 };
+      return {
+        chartData,
+        totalNumber,
+        totalStructures,
+        totalDemolish,
+        percDemolished,
+        q1,
+      };
     },
     placeholderData: keepPreviousData,
     refetchOnMount: false,
@@ -127,6 +142,7 @@ const ChartStructure = memo(() => {
   );
   const chartData = data?.chartData ?? [];
   const totalNumber = thousands_separators(data?.totalNumber) || 0;
+  const totalStructures = thousands_separators(data?.totalStructures ?? 0);
   const totalDemolish = data?.totalDemolish ?? 0;
   const percDemolished = data?.percDemolished ?? 0;
 
@@ -205,7 +221,7 @@ const ChartStructure = memo(() => {
       updateChartPanelwidth: setChartPanelwidth,
       data: [],
       seriesScale,
-      innerValue: totalNumber,
+      innerValue: totalStructures,
       innerLabel: "STRUCTURES",
       innerLabelFontSize,
       innerValueFontSize,
@@ -233,8 +249,8 @@ const ChartStructure = memo(() => {
   //    duplicate adapters.
   useEffect(() => {
     if (!renderRef.current) return;
-    renderRef.current.updateData(chartData, totalNumber, str_status_q);
-  }, [chartData, totalNumber, str_status_q]);
+    renderRef.current.updateData(chartData, totalStructures, str_status_q);
+  }, [chartData, totalStructures, str_status_q]);
 
   return (
     <>
