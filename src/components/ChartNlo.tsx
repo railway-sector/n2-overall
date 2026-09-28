@@ -188,11 +188,11 @@ const ChartNlo = memo(() => {
       seriesScale,
       innerValue: totalHouseholds,
       innerLabel: "HOUSEHOLDS",
+      innerLabelColor: "#ffffff",
       innerLabelFontSize,
       innerValueFontSize,
       layer: nloLayer,
       statusArray: nlo_status_q,
-      bkg_color_switch: false,
       seriesFillHash: undefined,
     });
     renderRef.current = renderer;

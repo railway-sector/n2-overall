@@ -223,11 +223,11 @@ const ChartStructure = memo(() => {
       seriesScale,
       innerValue: totalStructures,
       innerLabel: "STRUCTURES",
+      innerLabelColor: "#ffffff",
       innerLabelFontSize,
       innerValueFontSize,
       layer: structureLayer,
       statusArray: str_status_q,
-      bkg_color_switch: false,
       seriesFillHash: undefined,
     });
     renderRef.current = renderer;
