@@ -139,7 +139,6 @@ const ChartUtilityLine = memo(() => {
   //---  Column Chart Renderer — created ONCE (mount only)
   useEffect(() => {
     const root = rootSetter({ chartID: chartID });
-    root.setThemes([]);
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
