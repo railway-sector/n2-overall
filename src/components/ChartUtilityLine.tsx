@@ -20,7 +20,7 @@ import {
 import ChartStackColumns from "chart-stack-column";
 import QueryExpressionLayers from "query-layers-expression";
 
-const CHART_ID = "utility-line-bar";
+const chartID = "utility-line-bar";
 const CHART_BORDER_COLOR = "#00c5ff";
 const CHART_BORDER_WIDTH = 0.4;
 const CHART_ICON_POSITION_X = undefined;
@@ -86,9 +86,12 @@ function useUtilityData(
 
 // Draw chart
 const ChartUtilityLine = memo(() => {
-  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const { cpackage, updateUtilityLinestats } = use(MyContext);
+
+  const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
+  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const legendRef = useRef<unknown | any | undefined>({});
+  const rendererRef = useRef<ChartStackColumnRender | null>(null);
   const chartRef = useRef<unknown | any | undefined>({});
 
   //--- Query Expression
@@ -111,15 +114,32 @@ const ChartUtilityLine = memo(() => {
   // ************************************
   //  Responsive Chart parameters
   // ***********************************
-  const new_chartIconSize = chartPanelwidth ? chartPanelwidth * 0.06 : 0;
-  const new_axisFontSize = chartPanelwidth ? chartPanelwidth * 0.03 : 0;
+  const chartIconSize = chartPanelwidth ? chartPanelwidth * 0.06 : 0;
+  const axisFontSize = chartPanelwidth ? chartPanelwidth * 0.03 : 0;
 
-  // Utility line
+  //--- Keep click-handler-relevant values fresh without rebuilding the
+  //    chart. view lives here too (not passed statically to the
+  //    renderer) since arcgis-scene's view may not be ready on first
+  //    mount.
+  const configBaseArgs = {
+    revit: false,
+    layers: [utilityLineLayer, utilityLineLayer1],
+    buildingLayer: undefined,
+    chartCategoryTypeField: util_type_f,
+    where: q1,
+    status_field: util_status_f,
+    view: arcgisScene?.view,
+  };
+
+  const configRef = useRef({ ...configBaseArgs });
   useEffect(() => {
-    const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
-    const root = rootSetter({ chartID: CHART_ID });
-    root.setThemes([]);
+    configRef.current = { ...configBaseArgs };
+  }, [data, util_status_f, arcgisScene]);
 
+  //---  Column Chart Renderer — created ONCE (mount only)
+  useEffect(() => {
+    const root = rootSetter({ chartID: chartID });
+    root.setThemes([]);
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
@@ -133,43 +153,67 @@ const ChartUtilityLine = memo(() => {
     chartRef.current = chart;
 
     const legend = legendSetter({
-      chart,
-      root,
-      marginTop: 15,
-      scale: 0.9,
+      chart: chart,
+      root: root,
+      centerX: 50,
+      centerY: 50,
+      x: 60,
+      y: 97,
+      marginTop: 20,
       layout: root.horizontalLayout,
-      centerX: -30,
     });
     legendRef.current = legend;
 
-    new ChartStackColumnRender({
-      revit: false,
-      layers: [utilityLineLayer, utilityLineLayer1],
+    //--- NOTE: no `view` here — it's read live from configRef.current
+    //    inside chartrender.ts, since arcgis-scene may not have a
+    //    ready `.view` yet at this point.
+    const renderer = new ChartStackColumnRender({
       root,
       chart,
-      data: chartData,
+      data: [],
+      configRef,
       buildingLayer: undefined,
-      where: q1,
       chartCategoryTypes: util_types,
-      chartCategoryTypeField: util_type_f,
-      statusTypename: ["Completed", "To be Constructed"],
-      statusStatename: ["comp", "incomp"],
+      statusTypename: ["Completed", "To be Constructed"], //["Completed", "To be Constructed", "Under Construction"],
+      statusStatename: ["comp", "incomp"], //["comp", "incomp", "ongoing"],
       statusArray: util_status_q,
-      statusField: util_status_f,
       seriesStatusColor: viastatus_q.map((c: any) => c.color),
       strokeColor: CHART_BORDER_COLOR,
       strokeWidth: CHART_BORDER_WIDTH,
-      view: arcgisScene?.view,
-      new_chartIconSize,
-      new_axisFontSize,
+      chartIconSize,
+      axisFontSize,
       chartIconPositionX: CHART_ICON_POSITION_X,
       chartPaddingRightIconLabel: CHART_PADDING_RIGHT_ICON_LABEL,
       legend,
       updateChartPanelwidth: setChartPanelwidth,
-    }).chartRendererColumn();
+    });
+    rendererRef.current = renderer;
+    renderer.chartRendererColumn();
 
-    return () => root.dispose();
-  }, [chartData, new_chartIconSize]);
+    return () => {
+      root.dispose();
+      rendererRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  //--- Push new data / inner value / affected-area figures into the
+  //    already-mounted chart. No dispose, no rebuild -> no blink.
+  //    NOTE: affectedAreaValue is NOT called here directly — it's
+  //    registered once inside chartrender.ts and reads live data via
+  //    closures, which updateData() keeps in sync. Calling it here on
+  //    every render would both miss the first paint and stack
+  //    duplicate adapters.
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer || !chartPanelwidth) return; // wait for a real width
+
+    //--- Sizes are captured at construction, so refresh them here
+    renderer.chartIconSize = chartIconSize;
+    renderer.axisFontSize = axisFontSize;
+
+    renderer.updateData(chartData);
+  }, [chartData, chartPanelwidth]);
 
   return (
     <>
@@ -190,7 +234,7 @@ const ChartUtilityLine = memo(() => {
         LINE FEATURE:
       </div>
       <div
-        id={CHART_ID}
+        id={chartID}
         style={{
           height: "32vh",
           backgroundColor: "rgb(0,0,0,0)",

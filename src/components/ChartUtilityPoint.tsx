@@ -23,7 +23,7 @@ import ChartStackColumnRender from "chart-stack-column-render";
 import ChartStackColumns from "chart-stack-column";
 import QueryExpressionLayers from "query-layers-expression";
 
-const CHART_ID = "utility-point-bar";
+const chartID = "utility-point-bar";
 
 // Static chart layout — doesn't depend on props/state, so keep it out of the component
 const CHART_LAYOUT = {
@@ -118,19 +118,38 @@ const ChartUtilityPoint = memo(() => {
   }, [data, utilityLinestats]);
 
   const legendRef = useRef<unknown | any | undefined>({});
+  const rendererRef = useRef<ChartStackColumnRender | null>(null);
   const chartRef = useRef<unknown | any | undefined>({});
 
-  const new_fontSize = chartPanelwidth / 20;
-  const new_valueSize = new_fontSize * 1.55;
-  const new_chartIconSize = chartPanelwidth * 0.06;
-  const new_axisFontSize = chartPanelwidth * 0.03;
-  const new_asofDateSize = chartPanelwidth * 0.03;
+  const fontSize = chartPanelwidth / 20;
+  const valueSize = fontSize * 1.55;
+  const chartIconSize = chartPanelwidth * 0.06;
+  const axisFontSize = chartPanelwidth * 0.03;
+  const asofDateSize = chartPanelwidth * 0.03;
 
-  // Utility point
+  //--- Keep click-handler-relevant values fresh without rebuilding the
+  //    chart. view lives here too (not passed statically to the
+  //    renderer) since arcgis-scene's view may not be ready on first
+  //    mount.
+  const configBaseArgs = {
+    revit: false,
+    layers: [utilityPointLayer, utilityPointLayer1],
+    buildingLayer: undefined,
+    chartCategoryTypeField: util_type_f,
+    where: q1,
+    status_field: util_status_f,
+    view: arcgisScene?.view,
+  };
+
+  const configRef = useRef({ ...configBaseArgs });
   useEffect(() => {
-    const root = rootSetter({ chartID: CHART_ID });
-    root.setThemes([]);
+    configRef.current = { ...configBaseArgs };
+  }, [data, util_status_f, arcgisScene]);
 
+  //---  Column Chart Renderer — created ONCE (mount only)
+  useEffect(() => {
+    const root = rootSetter({ chartID: chartID });
+    root.setThemes([]);
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
@@ -146,43 +165,64 @@ const ChartUtilityPoint = memo(() => {
     const legend = legendSetter({
       chart: chart,
       root: root,
-      marginTop: 15,
-      scale: 0.9,
+      centerX: 50,
+      centerY: 50,
+      x: 60,
+      y: 97,
+      marginTop: 20,
       layout: root.horizontalLayout,
-      forceHidden: true,
     });
     legendRef.current = legend;
 
-    new ChartStackColumnRender({
-      revit: false,
-      layers: [utilityPointLayer, utilityPointLayer1],
+    //--- NOTE: no `view` here — it's read live from configRef.current
+    //    inside chartrender.ts, since arcgis-scene may not have a
+    //    ready `.view` yet at this point.
+    const renderer = new ChartStackColumnRender({
       root,
       chart,
-      data: chartData,
-      buildingLayer: undefined,
-      where: q1,
+      data: [],
+      configRef,
       chartCategoryTypes: util_types,
-      chartCategoryTypeField: util_type_f,
       statusTypename: ["Completed", "To be Constructed"], //["Completed", "To be Constructed", "Under Construction"],
       statusStatename: ["comp", "incomp"], //["comp", "incomp", "ongoing"],
       statusArray: util_status_q,
-      statusField: util_status_f,
       seriesStatusColor: viastatus_q.map((c: any) => c.color),
       strokeColor: CHART_BORDER_COLOR,
       strokeWidth: CHART_BORDER_WIDTH,
-      view: arcgisScene?.view,
-      new_chartIconSize,
-      new_axisFontSize,
+      chartIconSize,
+      axisFontSize,
       chartIconPositionX: CHART_ICON_POSITION_X,
       chartPaddingRightIconLabel: CHART_PADDING_RIGHT_ICON_LABEL,
       legend,
       updateChartPanelwidth: setChartPanelwidth,
-    }).chartRendererColumn();
+    });
+    rendererRef.current = renderer;
+    renderer.chartRendererColumn();
 
     return () => {
       root.dispose();
+      rendererRef.current = null;
     };
-  }, [chartData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  //--- Push new data / inner value / affected-area figures into the
+  //    already-mounted chart. No dispose, no rebuild -> no blink.
+  //    NOTE: affectedAreaValue is NOT called here directly — it's
+  //    registered once inside chartrender.ts and reads live data via
+  //    closures, which updateData() keeps in sync. Calling it here on
+  //    every render would both miss the first paint and stack
+  //    duplicate adapters.
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer || !chartPanelwidth) return; // wait for a real width
+
+    //--- Sizes are captured at construction, so refresh them here
+    renderer.chartIconSize = chartIconSize;
+    renderer.axisFontSize = axisFontSize;
+
+    renderer.updateData(chartData);
+  }, [chartData, chartPanelwidth]);
 
   return (
     <>
@@ -205,7 +245,7 @@ const ChartUtilityPoint = memo(() => {
           <dt
             style={{
               color: primaryLabelColor,
-              fontSize: `${new_fontSize}px`,
+              fontSize: `${fontSize}px`,
               marginRight: "35px",
             }}
           >
@@ -214,7 +254,7 @@ const ChartUtilityPoint = memo(() => {
           <dd
             style={{
               color: valueLabelColor,
-              fontSize: `${new_valueSize}px`,
+              fontSize: `${valueSize}px`,
               fontWeight: "bold",
               fontFamily: "calibri",
               lineHeight: "1.2",
@@ -231,7 +271,7 @@ const ChartUtilityPoint = memo(() => {
       <div
         style={{
           color: "gray",
-          fontSize: `${new_asofDateSize}px`,
+          fontSize: `${asofDateSize}px`,
           float: "right",
           marginRight: "15px",
         }}
@@ -246,9 +286,9 @@ const ChartUtilityPoint = memo(() => {
         POINT FEATURE:
       </div>
       <div
-        id={CHART_ID}
+        id={chartID}
         style={{
-          height: "29vh",
+          height: "30vh",
           backgroundColor: "rgb(0,0,0,0)",
           color: "white",
           marginRight: "20px",
