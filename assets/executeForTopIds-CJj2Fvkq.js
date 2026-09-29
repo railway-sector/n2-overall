@@ -1,1 +1,0 @@
-import{dS as m}from"./index-PDF71Hav.js";import{d as s}from"./queryTopFeatures-Dr71tIMK.js";import e from"./TopFeaturesQuery-DZybW8yg.js";async function i(o,r,t){const a=m(o);return(await s(a,e.from(r),{...t})).data.objectIds}export{i as executeForTopIds};
