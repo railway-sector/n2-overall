@@ -173,6 +173,7 @@ const ChartUtilityPoint = memo(() => {
       layout: root.horizontalLayout,
     });
     legendRef.current = legend;
+    legend.set("forceHidden", true);
 
     //--- NOTE: no `view` here — it's read live from configRef.current
     //    inside chartrender.ts, since arcgis-scene may not have a
