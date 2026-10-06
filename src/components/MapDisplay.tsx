@@ -24,6 +24,7 @@ import {
   stationLayer,
   demolishedStrucLayer,
   sources,
+  relocatedLayer,
 } from "../layers";
 import type { ArcgisSearch } from "@arcgis/map-components/components/arcgis-search";
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils";
@@ -62,6 +63,7 @@ export default function MapDisplay() {
       handedOverLotLayer,
       stationLayer,
       demolishedStrucLayer,
+      relocatedLayer,
     ]);
 
     arcgisSearch.allPlaceholder = "LotID, StructureID, Chainage";
