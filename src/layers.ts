@@ -274,6 +274,15 @@ export const endorsedLotLayer = new FeatureLayer({
   popupTemplate: lot_popup,
 });
 
+//--- FREE AND CLEAR LOTS ---//
+// export const freeAndClearLotLayer = new FeatureLayer({
+//   portalItem: portalItems("23500954a8d84a46886e76e6e0883a69"),
+//   renderer: free_and_clear_renderer,
+//   popupTemplate: lot_popup,
+//   title: "Free and Clear Lots",
+//   elevationInfo: { mode: "on-the-ground" },
+// });
+
 //--- HANDED-OVER LOTS (PUBLIC + PRIATE LOTS) ---//
 export const handedOverLotLayer = new FeatureLayer({
   portalItem: portalItems("23500954a8d84a46886e76e6e0883a69"),
@@ -409,6 +418,7 @@ export const lotGroupLayer = new GroupLayer({
     pnrLayer,
     accessibleLotAreaLayer,
     handedOverLotLayer,
+    //freeAndClearLotLayer,
   ],
 });
 
